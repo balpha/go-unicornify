@@ -1,0 +1,71 @@
+package unicornify
+
+import (
+	"image/color"
+	"math"
+	"reflect"
+)
+
+type Color struct {
+	R, G, B byte
+}
+
+func (c Color) RGBA() (r, g, b, a uint32) {
+	return color.RGBA{c.R, c.G, c.B, 255}.RGBA()
+}
+
+func MixColors(c1 Color, c2 Color, f float64) Color {
+	return Color{
+		R: MixBytes(c1.R, c2.R, f),
+		G: MixBytes(c1.G, c2.G, f),
+		B: MixBytes(c1.B, c2.B, f),
+	}
+}
+
+func v(m1, m2, hue float64) float64 {
+	_, hue = math.Modf(hue)
+	_, hue = math.Modf(hue + 1)
+	if hue < 1./6 {
+		return m1 + (m2-m1)*hue*6
+	}
+	if hue < .5 {
+		return m2
+	}
+	if hue < 2./3 {
+		return m1 + (m2-m1)*(2./3-hue)*6
+	}
+	return m1
+}
+
+func hsl2col(hue, sat, lig int) Color {
+	h := float64(hue) / 360
+	s := float64(sat) / 100
+	l := float64(lig) / 100
+
+	var rf, gf, bf, m1, m2 float64
+	if s == 0 {
+		rf, gf, bf = 1, 1, 1
+	} else {
+		if l <= .5 {
+			m2 = l * (1.0 + s)
+		} else {
+			m2 = l + s - (l * s)
+		}
+		m1 = 2*l - m2
+		rf = v(m1, m2, h+1./3)
+		gf = v(m1, m2, h)
+		bf = v(m1, m2, h-1./3)
+	}
+	return Color{
+		R: byte(255 * rf),
+		G: byte(255 * gf),
+		B: byte(255 * bf),
+	}
+}
+
+func ColorFromData(d interface{}, name string, lightness int) Color {
+	dv := reflect.ValueOf(d)
+	hue := int(dv.FieldByName(name + "Hue").Int())
+	sat := int(dv.FieldByName(name + "Sat").Int())
+	return hsl2col(hue, sat, lightness)
+}
