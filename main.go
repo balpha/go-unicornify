@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
+	"image"
 	"image/png"
 	"math/rand"
 	"os"
@@ -16,7 +17,7 @@ import (
 
 func main() {
 	var mail, hash string
-	var random bool
+	var random, free, zoomOut, double bool
 	var size int
 	var outfile string
 
@@ -25,6 +26,9 @@ func main() {
 	flag.BoolVar(&random, "r", false, "generate a random unicorn avatar")
 	flag.IntVar(&size, "s", 256, "the size of the generated unicorn avatar in pixels (in either direction)")
 	flag.StringVar(&outfile, "o", "", "filename of the output PNG image, defaults to {hash}.png")
+	flag.BoolVar(&free, "f", false, "generate a free unicorn avatar, i.e. with a transparent background")
+	flag.BoolVar(&zoomOut, "z", false, "zoom out, so the unicorn is fully visible")
+	flag.BoolVar(&double, "hq", false, "high quality")
 	flag.Parse()
 	inputs := 0
 	if mail != "" {
@@ -59,11 +63,18 @@ func main() {
 	}
 
 	fmt.Printf("Creating size %v avatar for hash %v, writing into %v", size, hash, outfile)
-
-	err, img := unicornify.MakeAvatar(hash, size)
+	actualSize := size
+	if double {
+		actualSize *= 2
+	}
+	err, img := unicornify.MakeAvatar(hash, actualSize, !free, zoomOut)
 	if err != nil {
 		os.Stderr.WriteString("Not a valid hexadecimal number: " + hash + "\n")
 		os.Exit(1)
+	}
+
+	if double {
+		img = downscale(img)
 	}
 
 	f, err := os.Create(outfile)
@@ -100,4 +111,23 @@ func randomHash() string {
 		}
 	}
 	return hex.EncodeToString(b)
+}
+
+func downscale(img *image.RGBA) *image.RGBA {
+	origsize := img.Bounds().Dx()
+
+	result := image.NewRGBA(image.Rect(0, 0, origsize/2, origsize/2))
+
+	inpix := img.Pix
+	outpix := result.Pix
+
+	for y := 0; y < origsize/2; y++ {
+		for x := 0; x < origsize*2; x++ {
+			inpos := (x/4)*8 + x%4 + y*2*img.Stride
+			v := uint32(inpix[inpos]) + uint32(inpix[inpos+4]) + uint32(inpix[inpos+img.Stride]) + uint32(inpix[inpos+img.Stride+4])
+			outpix[x+y*result.Stride] = uint8(v / 4)
+		}
+	}
+	return result
+
 }

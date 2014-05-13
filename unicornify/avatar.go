@@ -7,7 +7,7 @@ import (
 	"math"
 )
 
-func MakeAvatar(hash string, size int) (error, image.Image) {
+func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool) (error, *image.RGBA) {
 
 	rand := pyrand.NewRandom()
 	err := rand.SeedFromHexString(hash)
@@ -25,6 +25,10 @@ func MakeAvatar(hash string, size int) (error, image.Image) {
 	bgdata.Randomize1(rand)
 
 	unicornScaleFactor := .5 + math.Pow(rand.Random(), 2)*2.5
+	if zoomOut {
+		unicornScaleFactor = .5
+	}
+
 	sign := rand.Choice(2)*2 - 1
 	abs := rand.RandInt(10, 75)
 	yAngle := float64(90+sign*abs) * DEGREE
@@ -79,7 +83,9 @@ func MakeAvatar(hash string, size int) (error, image.Image) {
 
 	img := image.NewRGBA(image.Rect(0, 0, size, size))
 	ctx := draw2d.NewGraphicContext(img)
-	bgdata.Draw(img)
+	if withBackground {
+		bgdata.Draw(img)
+	}
 	uni.Draw(ctx, wv)
 
 	return nil, img
