@@ -12,7 +12,12 @@ It also has a few nice extra options.
 
 # Installation
 
-There's not much to install; you can grab a Linux or Windows binary from the [Downloads](https://bitbucket.org/balpha/go-unicornify/downloads) page (it's a single executable file, called `go-unicornify` on Linux  and `go-unicornify.exe` on Windows), or compile the program yourself (it is written in Go, a.k.a. golang).
+There's not much to install. You can either download one of these binaries:
+
+- [Download for Linux](https://bitbucket.org/balpha/go-unicornify/downloads/go-unicornify)
+- [Download for Windows](https://bitbucket.org/balpha/go-unicornify/downloads/go-unicornify.exe)
+
+from the [Downloads](https://bitbucket.org/balpha/go-unicornify/downloads) page (it's a single executable file, called `go-unicornify` on Linux  and `go-unicornify.exe` on Windows), or you can compile the program yourself (it is written in Go, a.k.a. golang).
 
 Please refer to the [LICENSE.txt](https://bitbucket.org/balpha/go-unicornify/src/tip/LICENSE.txt) file for redistribution information.
 
