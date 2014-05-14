@@ -1,0 +1,49 @@
+Go-Unicornify
+-------------
+
+Copyright (c) 2010-2014 Benjamin Dumke-von der Ehe
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+
+gopyrand
+--------
+
+Go-Unicornify uses my gopyrand library from https://bitbucket.org/balpha/gopyrand/wiki/Home.
+
+The original gopyrand code is MIT-licensed just like Go-Unicornify, but it
+(somewhat) contains third-party code. In particular, Go-Unicornify binaries
+have this code compiled in, and thus the third-party licenses apply.
+
+See https://bitbucket.org/balpha/gopyrand/src/tip/LICENSE.txt, which contains
+the following:
+
+
+The file implementation.go contains a port of the MT19937 implementation by
+Takuji Nishimura and Makoto Matsumoto, as present in the CPython source code.
+See the file for details (as far as I can tell, the license is a standard BSD
+3-clause license).
+
+Other parts of this library are ported from, adapted from, or inspired by CPython
+code, mainly http://hg.python.org/cpython/file/faef1da30c6d/Lib/random.py. I do
+not know whether there is enough significance in what I took from there to fall
+under copyright protection, but it doesn't really matter. The Python source code
+is Copyright (C) 2001-2014 Python Software Foundation with All Rights Reserved, and
+licensed under the Python Software Foundation License. See http://hg.python.org/cpython/file/c0bcf1383d77/LICENSE
+and https://docs.python.org/2/license.html for more details.
