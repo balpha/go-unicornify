@@ -1,13 +1,12 @@
 package unicornify
 
 import (
-	"code.google.com/p/draw2d/draw2d"
 	"image"
 	"math"
 )
 
 type Thing interface {
-	Draw(ctx draw2d.GraphicContext, wv WorldView)
+	Draw(img *image.RGBA, wv WorldView)
 	Project(wv WorldView)
 	Bounding() image.Rectangle
 	Sort(wv WorldView)
@@ -28,9 +27,9 @@ func (f *Figure) Project(wv WorldView) {
 	}
 }
 
-func (f *Figure) Draw(ctx draw2d.GraphicContext, wv WorldView) {
+func (f *Figure) Draw(img *image.RGBA, wv WorldView) {
 	for i := 0; i < len(f.things); i++ {
-		f.things[i].Draw(ctx, wv)
+		f.things[i].Draw(img, wv)
 	}
 }
 

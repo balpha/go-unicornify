@@ -2,8 +2,8 @@ package unicornify
 
 import (
 	"bitbucket.org/balpha/gopyrand"
-	"code.google.com/p/draw2d/draw2d"
 	"image"
+	"image/color"
 	"math"
 )
 
@@ -92,55 +92,65 @@ func (d BackgroundData) Draw(im *image.RGBA) {
 
 	// rainbow
 
-	ctx := draw2d.NewGraphicContext(im)
-
 	bandPixWidth := d.RainbowBandWidth * fsize
 	rainbowCenterX := fsize * (d.RainbowFoot + d.RainbowDir*d.RainbowHeight)
 	outerRadius := d.RainbowHeight * fsize
-
-	// except for the innermost (purple) one, the bands are drawn a bit wider so they overlap
-	// and thus we see no sub-pixel gap
-	overlap := math.Min(2, bandPixWidth)
-	ctx.SetLineWidth(d.RainbowBandWidth*fsize + overlap)
-	for band := 0; band < 7; band++ {
-		if band == 6 {
-			ctx.SetLineWidth(d.RainbowBandWidth * fsize)
-			overlap = 0
-		}
-		col := hsl2col(band*45, 100, 50)
-		ctx.BeginPath()
-		ctx.SetStrokeColor(col)
-		rad := outerRadius - float64(band)*bandPixWidth - overlap/2
-		ctx.ArcTo(rainbowCenterX, float64(horizonPixels), rad, rad, 0, -180*DEGREE)
-		ctx.Stroke()
-	}
+	
+	drawRainbow(im, int(rainbowCenterX + .5), horizonPixels, int(outerRadius+.5), bandPixWidth)
 
 	// clouds
 
 	for i, pos := range d.CloudPositions {
 		sizes := d.CloudSizes[i]
-		drawCloud(ctx, fsize*pos[0], fsize*pos[1], fsize*sizes[0], fsize*sizes[0]*sizes[1], d.Color("Sky", d.CloudLightnesses[i]))
+		drawCloud(im, fsize*pos[0], fsize*pos[1], fsize*sizes[0], fsize*sizes[0]*sizes[1], d.Color("Sky", d.CloudLightnesses[i]))
 	}
-
 }
 
-func drawCloud(ctx draw2d.GraphicContext, x, y, size1, size2 float64, col Color) {
-	ctx.SetFillColor(col)
-	ctx.BeginPath()
-	ctx.ArcTo(x-2*size1, y-size1, size1, size1, 0, deg360)
-	ctx.Fill()
-	ctx.BeginPath()
-	ctx.ArcTo(x+2*size1, y-size1, size1, size1, 0, deg360)
-	ctx.Fill()
-	ctx.BeginPath()
-	ctx.ArcTo(x, y-size1, size2, size2, 0, -180*DEGREE)
-	ctx.Fill()
-	ctx.BeginPath()
-	ctx.MoveTo(x-2*size1, y-size1-1)
-	ctx.LineTo(x+2*size1, y-size1-1)
-	ctx.LineTo(x+2*size1, y)
-	ctx.LineTo(x-2*size1, y)
-	ctx.Close()
-	ctx.Fill()
-
+func drawRainbow(img *image.RGBA, cx, cy, r int, bandWidth float64) {
+	size := img.Bounds().Dx()
+	left := between(cx - r, 0, size -1)
+	right := between(cx + r, 0, size -1)
+	top := between(cy - r, 0, size -1)
+	bottom := between(cy, 0, size -1)
+	innerRadSquared := int(float64(r) - 7*bandWidth)
+	
+	bandCols := [7]color.RGBA{}
+	for i:=0; i<7; i++ {
+		col := hsl2col(i*45, 100, 50)
+		bandCols[i] = color.RGBA{col.R, col.G, col.B, 255}
+	}
+	
+	for x:=left; x<=right; x++ {
+		dx := x-cx
+		for y:=top; y<= bottom; y++ {
+			dy := y-cy
+			dsquared := dx*dx+dy*dy
+			if dsquared < innerRadSquared {
+				continue
+			}
+			d := math.Sqrt(float64(dsquared))
+			band := (float64(r)-d) / bandWidth
+			if band >= 7 || band < 0 {
+				continue
+			}
+			
+			img.SetRGBA(x,y,bandCols[int(band)])
+		}
+	}
+	
+}
+func drawCloud(img *image.RGBA, x, y, size1, size2 float64, col Color) {
+	CircleF(img, x-2*size1, y-size1, size1, col)
+	CircleF(img, x+2*size1, y-size1, size1, col)
+	TopHalfCircleF(img, x, y-size1, size2, col)
+	
+	xi := int(x + .5)
+	yi := int(y + .5)
+	size1i := int(size1 + .5)
+	right :=xi+2*size1i
+	for py:=yi-size1i-1;py<=yi;py++ {
+		for px:=xi-2*size1i;px<=right;px++ {
+			img.Set(px, py, col)
+		}
+	}
 }

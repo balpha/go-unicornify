@@ -1,7 +1,6 @@
 package unicornify
 
 import (
-	"code.google.com/p/draw2d/draw2d"
 	"image"
 	"math"
 )
@@ -24,11 +23,8 @@ func NewBallP(center Point3d, r float64, c Color) *Ball {
 	}
 }
 
-func (b Ball) Draw(ctx draw2d.GraphicContext, wv WorldView) {
-	ctx.BeginPath()
-	ctx.SetFillColor(b.Color)
-	ctx.ArcTo(b.Projection.X()+wv.Shift[0], b.Projection.Y()+wv.Shift[1], b.Radius, b.Radius, 0, deg360)
-	ctx.Fill()
+func (b Ball) Draw(img *image.RGBA, wv WorldView) {
+	CircleF(img, b.Projection.X()+wv.Shift[0], b.Projection.Y()+wv.Shift[1], b.Radius, b.Color)
 }
 
 func (b *Ball) Project(wv WorldView) {

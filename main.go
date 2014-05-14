@@ -17,7 +17,7 @@ import (
 
 func main() {
 	var mail, hash string
-	var random, free, zoomOut, double bool
+	var random, free, zoomOut, nodouble bool
 	var size int
 	var outfile string
 
@@ -28,7 +28,7 @@ func main() {
 	flag.StringVar(&outfile, "o", "", "filename of the output PNG image, defaults to {hash}.png")
 	flag.BoolVar(&free, "f", false, "generate a free unicorn avatar, i.e. with a transparent background")
 	flag.BoolVar(&zoomOut, "z", false, "zoom out, so the unicorn is fully visible")
-	flag.BoolVar(&double, "hq", false, "high quality")
+	flag.BoolVar(&nodouble, "noaa", false, "no antialiasing")
 	flag.Parse()
 	inputs := 0
 	if mail != "" {
@@ -62,9 +62,9 @@ func main() {
 		outfile = hash + ".png"
 	}
 
-	fmt.Printf("Creating size %v avatar for hash %v, writing into %v", size, hash, outfile)
+	fmt.Printf("Creating size %v avatar for hash %v, writing into %v\n", size, hash, outfile)
 	actualSize := size
-	if double {
+	if !nodouble {
 		actualSize *= 2
 	}
 	err, img := unicornify.MakeAvatar(hash, actualSize, !free, zoomOut)
@@ -73,7 +73,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if double {
+	if !nodouble {
 		img = downscale(img)
 	}
 

@@ -2,7 +2,6 @@ package unicornify
 
 import (
 	"bitbucket.org/balpha/gopyrand"
-	"code.google.com/p/draw2d/draw2d"
 	"image"
 	"math"
 )
@@ -82,11 +81,10 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool) (error
 	wv.Shift = shoulderShift.Shifted(headShift.Shifted(shoulderShift.Neg()).Times(factor)).DiscardZ()
 
 	img := image.NewRGBA(image.Rect(0, 0, size, size))
-	ctx := draw2d.NewGraphicContext(img)
 	if withBackground {
 		bgdata.Draw(img)
 	}
-	uni.Draw(ctx, wv)
+	uni.Draw(img, wv)
 
 	return nil, img
 }
