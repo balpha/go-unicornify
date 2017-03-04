@@ -82,7 +82,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 
 	img := image.NewRGBA(image.Rect(0, 0, size, size))
 	if withBackground {
-		bgdata.Draw(img)
+		bgdata.Draw(img, shading)
 	}
 	uni.Draw(img, wv, shading)
 
