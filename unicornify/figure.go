@@ -6,7 +6,7 @@ import (
 )
 
 type Thing interface {
-	Draw(img *image.RGBA, wv WorldView)
+	Draw(img *image.RGBA, wv WorldView, shading bool)
 	Project(wv WorldView)
 	Bounding() image.Rectangle
 	Sort(wv WorldView)
@@ -27,9 +27,9 @@ func (f *Figure) Project(wv WorldView) {
 	}
 }
 
-func (f *Figure) Draw(img *image.RGBA, wv WorldView) {
+func (f *Figure) Draw(img *image.RGBA, wv WorldView, shading bool) {
 	for i := 0; i < len(f.things); i++ {
-		f.things[i].Draw(img, wv)
+		f.things[i].Draw(img, wv, shading)
 	}
 }
 

@@ -7,17 +7,17 @@ import (
 )
 
 func TopHalfCircleF(img *image.RGBA, cx, cy, r float64, col Color) {
-	circleImpl(img, int(cx+.5), int(cy+.5), int(r+.5), col, true)
+	circleImpl(img, int(cx+.5), int(cy+.5), int(r+.5), col, true, false)
 }
 
-func CircleF(img *image.RGBA, cx, cy, r float64, col Color) {
-	Circle(img, int(cx+.5), int(cy+.5), int(r+.5), col)
+func CircleF(img *image.RGBA, cx, cy, r float64, col Color, shading bool) {
+	Circle(img, int(cx+.5), int(cy+.5), int(r+.5), col, shading)
 }
 
-func Circle(img *image.RGBA, cx, cy, r int, col Color) {
-	circleImpl(img, cx, cy, r, col, false)
+func Circle(img *image.RGBA, cx, cy, r int, col Color, shading bool) {
+	circleImpl(img, cx, cy, r, col, false, shading)
 }
-func circleImpl(img *image.RGBA, cx, cy, r int, col Color, topHalfOnly bool) {
+func circleImpl(img *image.RGBA, cx, cy, r int, col Color, topHalfOnly bool, shading bool) {
 	colrgba := color.RGBA{col.R, col.G, col.B, 255}
 	imgsize := img.Bounds().Dx()
 	if cx < -r || cy < -r || cx-r > imgsize || cy-r > imgsize {
@@ -32,6 +32,8 @@ func circleImpl(img *image.RGBA, cx, cy, r int, col Color, topHalfOnly bool) {
 	fill := func(left, right, y int) {
 		left += cx
 		right += cx
+		thiscol := col;
+
 		y += cy
 		if left < 0 {
 			left = 0
@@ -41,6 +43,11 @@ func circleImpl(img *image.RGBA, cx, cy, r int, col Color, topHalfOnly bool) {
 		}
 
 		for x := left; x <= right; x++ {
+			if shading && y>=cy {
+				sh := float64(0.3) * math.Min(1, (float64(y-cy) + math.Abs(float64(x-cx)*0.5))*float64(y-cy) / (float64(r*r)))
+				thiscol = MixColors(col, Black, sh);
+			}
+			colrgba = color.RGBA{thiscol.R, thiscol.G, thiscol.B, 255}
 			img.SetRGBA(x, y, colrgba)
 		}
 	}

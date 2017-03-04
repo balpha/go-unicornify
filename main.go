@@ -17,7 +17,7 @@ import (
 
 func main() {
 	var mail, hash string
-	var random, free, zoomOut, nodouble bool
+	var random, free, zoomOut, nodouble, shading bool
 	var size int
 	var outfile string
 
@@ -29,6 +29,7 @@ func main() {
 	flag.BoolVar(&free, "f", false, "generate a free unicorn avatar, i.e. with a transparent background")
 	flag.BoolVar(&zoomOut, "z", false, "zoom out, so the unicorn is fully visible")
 	flag.BoolVar(&nodouble, "noaa", false, "no antialiasing")
+	flag.BoolVar(&shading, "shading", false, "add shading that gives the unicorns more depth")
 	flag.Parse()
 	inputs := 0
 	if mail != "" {
@@ -67,7 +68,7 @@ func main() {
 	if !nodouble {
 		actualSize *= 2
 	}
-	err, img := unicornify.MakeAvatar(hash, actualSize, !free, zoomOut)
+	err, img := unicornify.MakeAvatar(hash, actualSize, !free, zoomOut, shading)
 	if err != nil {
 		os.Stderr.WriteString("Not a valid hexadecimal number: " + hash + "\n")
 		os.Exit(1)

@@ -6,7 +6,7 @@ import (
 	"math"
 )
 
-func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool) (error, *image.RGBA) {
+func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shading bool) (error, *image.RGBA) {
 
 	rand := pyrand.NewRandom()
 	err := rand.SeedFromHexString(hash)
@@ -84,7 +84,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool) (error
 	if withBackground {
 		bgdata.Draw(img)
 	}
-	uni.Draw(img, wv)
+	uni.Draw(img, wv, shading)
 
 	return nil, img
 }

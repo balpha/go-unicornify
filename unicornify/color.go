@@ -10,6 +10,8 @@ type Color struct {
 	R, G, B byte
 }
 
+var Black = Color{0, 0, 0}
+
 func (c Color) RGBA() (r, g, b, a uint32) {
 	return color.RGBA{c.R, c.G, c.B, 255}.RGBA()
 }

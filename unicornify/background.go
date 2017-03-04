@@ -140,8 +140,8 @@ func drawRainbow(img *image.RGBA, cx, cy, r int, bandWidth float64) {
 	
 }
 func drawCloud(img *image.RGBA, x, y, size1, size2 float64, col Color) {
-	CircleF(img, x-2*size1, y-size1, size1, col)
-	CircleF(img, x+2*size1, y-size1, size1, col)
+	CircleF(img, x-2*size1, y-size1, size1, col, false)
+	CircleF(img, x+2*size1, y-size1, size1, col, false)
 	TopHalfCircleF(img, x, y-size1, size2, col)
 	
 	xi := int(x + .5)

@@ -29,7 +29,7 @@ func (b *Bone) Project(wv WorldView) {
 	b.Balls[1].Project(wv)
 }
 
-func (b Bone) Draw(img *image.RGBA, wv WorldView) {
+func (b Bone) Draw(img *image.RGBA, wv WorldView, shading bool) {
 	b1 := b.Balls[0]
 	b2 := b.Balls[1]
 
@@ -42,7 +42,7 @@ func (b Bone) Draw(img *image.RGBA, wv WorldView) {
 	c1 := b1.Color
 	c2 := b2.Color
 	
-	if (b.XFunc == nil && b.YFunc == nil) {
+	if (!shading && b.XFunc == nil && b.YFunc == nil) {
 		ConnectCirclesF(img, p1.X()+wv.Shift[0], p1.Y()+wv.Shift[1], r1, c1, p2.X()+wv.Shift[0], p2.Y()+wv.Shift[1], r2, c2)
 		return
 	}
@@ -73,9 +73,9 @@ func (b Bone) Draw(img *image.RGBA, wv WorldView) {
 		if nonlin && step > 0 && (math.Abs(x-prevX) > 1.1 || math.Abs(y-prevY) > 1.1) {
 			sb1 := &Ball{Projection: Point3d{prevX, prevY, 0}, Radius: prevR, Color: prevCol}
 			sb2 := &Ball{Projection: Point3d{x, y, 0}, Radius: r, Color: col}
-			NewBone(sb1, sb2).Draw(img, wv)
+			NewBone(sb1, sb2).Draw(img, wv, shading)
 		} else {
-			Circle(img, int(x+wv.Shift[0]+.5), int(y+wv.Shift[1]+.5), int(r+.5), col)
+			Circle(img, int(x+wv.Shift[0]+.5), int(y+wv.Shift[1]+.5), int(r+.5), col, shading)
 		}
 		prevX, prevY, prevR, prevCol = x, y, r, col
 	}

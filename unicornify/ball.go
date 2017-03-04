@@ -23,8 +23,8 @@ func NewBallP(center Point3d, r float64, c Color) *Ball {
 	}
 }
 
-func (b Ball) Draw(img *image.RGBA, wv WorldView) {
-	CircleF(img, b.Projection.X()+wv.Shift[0], b.Projection.Y()+wv.Shift[1], b.Radius, b.Color)
+func (b Ball) Draw(img *image.RGBA, wv WorldView, shading bool) {
+	CircleF(img, b.Projection.X()+wv.Shift[0], b.Projection.Y()+wv.Shift[1], b.Radius, b.Color, shading)
 }
 
 func (b *Ball) Project(wv WorldView) {
