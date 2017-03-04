@@ -11,6 +11,7 @@ type Color struct {
 }
 
 var Black = Color{0, 0, 0}
+var BlackRGBA = color.RGBA{0,0,0,255}
 
 func (c Color) RGBA() (r, g, b, a uint32) {
 	return color.RGBA{c.R, c.G, c.B, 255}.RGBA()
@@ -21,6 +22,14 @@ func MixColors(c1 Color, c2 Color, f float64) Color {
 		R: MixBytes(c1.R, c2.R, f),
 		G: MixBytes(c1.G, c2.G, f),
 		B: MixBytes(c1.B, c2.B, f),
+	}
+}
+func MixColorsRGBA(c1 color.RGBA, c2 color.RGBA, f float64) color.RGBA {
+	return color.RGBA{
+		R: MixBytes(c1.R, c2.R, f),
+		G: MixBytes(c1.G, c2.G, f),
+		B: MixBytes(c1.B, c2.B, f),
+		A: 255,
 	}
 }
 

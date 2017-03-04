@@ -42,8 +42,8 @@ func (b Bone) Draw(img *image.RGBA, wv WorldView, shading bool) {
 	c1 := b1.Color
 	c2 := b2.Color
 	
-	if (!shading && b.XFunc == nil && b.YFunc == nil) {
-		ConnectCirclesF(img, p1.X()+wv.Shift[0], p1.Y()+wv.Shift[1], r1, c1, p2.X()+wv.Shift[0], p2.Y()+wv.Shift[1], r2, c2)
+	if (b.XFunc == nil && b.YFunc == nil) {
+		ConnectCirclesF(img, p1.X()+wv.Shift[0], p1.Y()+wv.Shift[1], r1, c1, p2.X()+wv.Shift[0], p2.Y()+wv.Shift[1], r2, c2, shading)
 		return
 	}
 

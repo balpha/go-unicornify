@@ -87,10 +87,10 @@ func between(v, min, max int) int {
 func round(v float64) int {
 	return int(v + .5)
 }
-func ConnectCirclesF(img *image.RGBA, cx1, cy1, r1 float64, col1 Color, cx2, cy2, r2 float64, col2 Color) {
-	ConnectCircles(img, round(cx1), round(cy1), round(r1), col1, round(cx2), round(cy2), round(r2), col2)
+func ConnectCirclesF(img *image.RGBA, cx1, cy1, r1 float64, col1 Color, cx2, cy2, r2 float64, col2 Color, shading bool) {
+	ConnectCircles(img, round(cx1), round(cy1), round(r1), col1, round(cx2), round(cy2), round(r2), col2, shading)
 }
-func ConnectCircles(img *image.RGBA, cx1, cy1, r1 int, col1 Color, cx2, cy2, r2 int, col2 Color) {
+func ConnectCircles(img *image.RGBA, cx1, cy1, r1 int, col1 Color, cx2, cy2, r2 int, col2 Color, shading bool) {
 	size := img.Bounds().Dx()
 	xmin := between(cx1-r1, 0, cx2-r2)
 	xmax := between(cx1+r1, cx2+r2, size)
@@ -159,7 +159,19 @@ func ConnectCircles(img *image.RGBA, cx1, cy1, r1 int, col1 Color, cx2, cy2, r2 
 				}
 				l = 0
 			}
-			img.SetRGBA(x, y, cols[int(l*255)])
+			col := cols[int(l*255)]
+			if (shading) {
+				tcy := float64(cy1) + l * float64(cy2-cy1)
+				tdy := float64(y) - tcy;
+				
+				if tdy >= 0 {
+					tcx := float64(cx1) + l * float64(cx2-cx1)
+					tr := float64(r1) + l * float64(r2-r1)
+					sh := float64(0.3) * math.Min(1, (tdy + math.Abs((float64(x)-tcx)*0.5))*tdy / float64(tr*tr))
+					col = MixColorsRGBA(col, BlackRGBA, sh);
+				}
+			}
+			img.SetRGBA(x, y, col)
 		}
 	}
 }
