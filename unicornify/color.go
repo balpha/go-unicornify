@@ -53,6 +53,21 @@ func DarkenRGBA(c color.RGBA, d uint8) color.RGBA {
 		A: c.A,
 	}
 }
+func Lighten(c Color, d uint8) Color {
+	return Color{ 
+		R: c.R + min(d, 255 - c.R),
+		G: c.G + min(d, 255 - c.G),
+		B: c.B + min(d, 255 - c.B),
+	}
+}
+func LightenRGBA(c color.RGBA, d uint8) color.RGBA {
+	return color.RGBA{ 
+		R: c.R + min(d, 255 - c.R),
+		G: c.G + min(d, 255 - c.G),
+		B: c.B + min(d, 255 - c.B),
+		A: c.A,
+	}
+}
 
 func v(m1, m2, hue float64) float64 {
 	_, hue = math.Modf(hue)

@@ -6,8 +6,23 @@ import (
 	"math"
 )
 
-func TopHalfCircleF(img *image.RGBA, cx, cy, r float64, col Color) {
-	circleImpl(img, int(cx+.5), int(cy+.5), int(r+.5), col, true, 0.0)
+func CircleShadingRGBA(x, y, r float64, col color.RGBA, shading float64) color.RGBA {
+	if shading == 0 || y == 0{
+		return col
+	}
+	sh1 := 1 - math.Sqrt(1 - y*y/(r*r))
+	d := math.Sqrt(x*x+y*y)/r
+	sh2 := math.Abs(y)/r// math.Sqrt(absy/r)
+	sh := (1-d)*sh1 + d*sh2
+	if y > 0 {
+		return DarkenRGBA(col, uint8(255 * sh*shading))
+	} else {
+		return LightenRGBA(col, uint8(128 * sh*shading))
+	}
+}
+
+func TopHalfCircleF(img *image.RGBA, cx, cy, r float64, col Color, shading float64) {
+	circleImpl(img, int(cx+.5), int(cy+.5), int(r+.5), col, true, shading)
 }
 
 func CircleF(img *image.RGBA, cx, cy, r float64, col Color, shading float64) {
@@ -17,6 +32,7 @@ func CircleF(img *image.RGBA, cx, cy, r float64, col Color, shading float64) {
 func Circle(img *image.RGBA, cx, cy, r int, col Color, shading float64) {
 	circleImpl(img, cx, cy, r, col, false, shading)
 }
+
 func circleImpl(img *image.RGBA, cx, cy, r int, col Color, topHalfOnly bool, shading float64) {
 	colrgba := color.RGBA{col.R, col.G, col.B, 255}
 	imgsize := img.Bounds().Dx()
@@ -32,7 +48,6 @@ func circleImpl(img *image.RGBA, cx, cy, r int, col Color, topHalfOnly bool, sha
 	fill := func(left, right, y int) {
 		left += cx
 		right += cx
-		thiscol := col;
 
 		y += cy
 		if left < 0 {
@@ -43,12 +58,8 @@ func circleImpl(img *image.RGBA, cx, cy, r int, col Color, topHalfOnly bool, sha
 		}
 
 		for x := left; x <= right; x++ {
-			if shading > 0 && y>=cy {
-				sh := shading * math.Min(1, (float64(y-cy) + math.Abs(float64(x-cx)*0.5))*float64(y-cy) / (float64(r*r)))
-				thiscol = Darken(col, uint8(255 * sh))
-			}
-			colrgba = color.RGBA{thiscol.R, thiscol.G, thiscol.B, 255}
-			img.SetRGBA(x, y, colrgba)
+			thiscol := CircleShadingRGBA(float64(x - cx), float64(y - cy), float64(r), colrgba, shading)
+			img.SetRGBA(x, y, thiscol)
 		}
 	}
 
@@ -162,14 +173,9 @@ func ConnectCircles(img *image.RGBA, cx1, cy1, r1 int, col1 Color, cx2, cy2, r2 
 			col := cols[int(l*255)]
 			if (shading > 0) {
 				tcy := float64(cy1) + l * float64(cy2-cy1)
-				tdy := float64(y) - tcy;
-				
-				if tdy >= 0 {
-					tcx := float64(cx1) + l * float64(cx2-cx1)
-					tr := float64(r1) + l * float64(r2-r1)
-					sh := shading * math.Min(1, (tdy + math.Abs((float64(x)-tcx)*0.5))*tdy / float64(tr*tr))
-					col = DarkenRGBA(col, uint8(255 * sh))
-				}
+				tcx := float64(cx1) + l * float64(cx2-cx1)
+				tr := float64(r1) + l * float64(r2-r1)
+				col = CircleShadingRGBA(float64(x) - tcx, float64(y) - tcy, tr, col, shading)
 			}
 			img.SetRGBA(x, y, col)
 		}

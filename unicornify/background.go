@@ -142,11 +142,11 @@ func drawRainbow(img *image.RGBA, cx, cy, r int, bandWidth float64) {
 func drawCloud(img *image.RGBA, x, y, size1, size2 float64, col Color, shaded bool) {
 	shading := 0.0
 	if shaded {
-		shading = 0.3
+		shading = 0.25
 	}
 	CircleF(img, x-2*size1, y-size1, size1, col, shading)
 	CircleF(img, x+2*size1, y-size1, size1, col, shading)
-	TopHalfCircleF(img, x, y-size1, size2, col)
+	TopHalfCircleF(img, x, y-size1, size2, col, shading)
 	
 	xi := int(x + .5)
 	yi := int(y + .5)
@@ -157,7 +157,7 @@ func drawCloud(img *image.RGBA, x, y, size1, size2 float64, col Color, shaded bo
 			thiscol := col
 			if shaded {
 				dy := float64(py - (yi-size1i-1))
-				sh := float64(0.3) * math.Min(1, dy*dy / (float64(size1*size1)))
+				sh := float64(0.25) * math.Min(1, dy*dy / (float64(size1*size1)))
 				thiscol = Darken(col, uint8(255 * sh))
 			}
 			img.Set(px, py, thiscol)
