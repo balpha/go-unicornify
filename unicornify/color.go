@@ -32,6 +32,27 @@ func MixColorsRGBA(c1 color.RGBA, c2 color.RGBA, f float64) color.RGBA {
 		A: 255,
 	}
 }
+func min (a,b uint8) uint8 {
+	if a > b {
+		return b
+	}
+	return a
+}
+func Darken(c Color, d uint8) Color {
+	return Color{ 
+		R: c.R - min(d, c.R),
+		G: c.G - min(d, c.G),
+		B: c.B - min(d, c.B),
+	}
+}
+func DarkenRGBA(c color.RGBA, d uint8) color.RGBA {
+	return color.RGBA{ 
+		R: c.R - min(d, c.R),
+		G: c.G - min(d, c.G),
+		B: c.B - min(d, c.B),
+		A: c.A,
+	}
+}
 
 func v(m1, m2, hue float64) float64 {
 	_, hue = math.Modf(hue)

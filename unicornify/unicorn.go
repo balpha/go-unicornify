@@ -51,8 +51,8 @@ func NewUnicorn(data UnicornData) *Unicorn {
 	u.Add(
 		NewBone(u.Snout, u.Head),
 		NewBone(u.HornOnset, u.HornTip),
-		NewBone(u.EyeLeft, u.IrisLeft),
-		NewBone(u.EyeRight, u.IrisRight),
+		NewShadedBone(u.EyeLeft, u.IrisLeft, 0.1),
+		NewShadedBone(u.EyeRight, u.IrisRight, 0.1),
 		u.PupilLeft, u.PupilRight,
 		NewNonLinBone(u.BrowLeftInner, u.BrowLeftMiddle, square, nil),
 		NewNonLinBone(u.BrowLeftMiddle, u.BrowLeftOuter, math.Sqrt, nil),

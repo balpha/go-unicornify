@@ -8,14 +8,25 @@ import (
 type Bone struct {
 	Balls        [2]*Ball
 	XFunc, YFunc func(float64) float64 // may be nil
+	Shading      float64
 }
 
 func NewBone(b1, b2 *Ball) *Bone {
 	return NewNonLinBone(b1, b2, nil, nil)
 }
 
+func NewShadedBone(b1, b2 *Ball, shading float64) *Bone {
+	return NewShadedNonLinBone(b1, b2, nil, nil, shading)
+}
+
+const defaultShading = 0.25
+
 func NewNonLinBone(b1, b2 *Ball, xFunc, yFunc func(float64) float64) *Bone {
-	return &Bone{[2]*Ball{b1, b2}, xFunc, yFunc}
+	return NewShadedNonLinBone(b1, b2, xFunc, yFunc, defaultShading)
+}
+
+func NewShadedNonLinBone(b1, b2 *Ball, xFunc, yFunc func(float64) float64, shading float64) *Bone {
+	return &Bone{[2]*Ball{b1, b2}, xFunc, yFunc, shading}
 }
 
 func reverse(f func(float64) float64) func(float64) float64 {
@@ -42,8 +53,13 @@ func (b Bone) Draw(img *image.RGBA, wv WorldView, shading bool) {
 	c1 := b1.Color
 	c2 := b2.Color
 	
+	sh := b.Shading
+	if (!shading) {
+		sh = 0
+	}
+	
 	if (b.XFunc == nil && b.YFunc == nil) {
-		ConnectCirclesF(img, p1.X()+wv.Shift[0], p1.Y()+wv.Shift[1], r1, c1, p2.X()+wv.Shift[0], p2.Y()+wv.Shift[1], r2, c2, shading)
+		ConnectCirclesF(img, p1.X()+wv.Shift[0], p1.Y()+wv.Shift[1], r1, c1, p2.X()+wv.Shift[0], p2.Y()+wv.Shift[1], r2, c2, sh)
 		return
 	}
 
@@ -73,9 +89,9 @@ func (b Bone) Draw(img *image.RGBA, wv WorldView, shading bool) {
 		if nonlin && step > 0 && (math.Abs(x-prevX) > 1.1 || math.Abs(y-prevY) > 1.1) {
 			sb1 := &Ball{Projection: Point3d{prevX, prevY, 0}, Radius: prevR, Color: prevCol}
 			sb2 := &Ball{Projection: Point3d{x, y, 0}, Radius: r, Color: col}
-			NewBone(sb1, sb2).Draw(img, wv, shading)
+			NewShadedBone(sb1, sb2, b.Shading).Draw(img, wv, shading)
 		} else {
-			Circle(img, int(x+wv.Shift[0]+.5), int(y+wv.Shift[1]+.5), int(r+.5), col, shading)
+			Circle(img, int(x+wv.Shift[0]+.5), int(y+wv.Shift[1]+.5), int(r+.5), col, sh)
 		}
 		prevX, prevY, prevR, prevCol = x, y, r, col
 	}

@@ -139,7 +139,11 @@ func drawRainbow(img *image.RGBA, cx, cy, r int, bandWidth float64) {
 	}
 	
 }
-func drawCloud(img *image.RGBA, x, y, size1, size2 float64, col Color, shading bool) {
+func drawCloud(img *image.RGBA, x, y, size1, size2 float64, col Color, shaded bool) {
+	shading := 0.0
+	if shaded {
+		shading = 0.3
+	}
 	CircleF(img, x-2*size1, y-size1, size1, col, shading)
 	CircleF(img, x+2*size1, y-size1, size1, col, shading)
 	TopHalfCircleF(img, x, y-size1, size2, col)
@@ -151,10 +155,10 @@ func drawCloud(img *image.RGBA, x, y, size1, size2 float64, col Color, shading b
 	for py:=yi-size1i-1;py<=yi;py++ {
 		for px:=xi-2*size1i;px<=right;px++ {
 			thiscol := col
-			if shading {
+			if shaded {
 				dy := float64(py - (yi-size1i-1))
 				sh := float64(0.3) * math.Min(1, dy*dy / (float64(size1*size1)))
-				thiscol = MixColors(col, Black, sh);			
+				thiscol = Darken(col, uint8(255 * sh))
 			}
 			img.Set(px, py, thiscol)
 		}
