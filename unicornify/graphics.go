@@ -10,7 +10,7 @@ func CircleShadingRGBA(x, y, r float64, col color.RGBA, shading float64) color.R
 	if shading == 0 || y == 0{
 		return col
 	}
-	sh1 := 1 - math.Sqrt(1 - y*y/(r*r))
+	sh1 := 1 - math.Sqrt(1 - math.Min(1, y*y/(r*r)))
 	d := math.Sqrt(x*x+y*y)/r
 	sh2 := math.Abs(y)/r// math.Sqrt(absy/r)
 	sh := (1-d)*sh1 + d*sh2
