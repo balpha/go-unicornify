@@ -136,7 +136,7 @@ func ConnectCircles(img *image.RGBA, cx1, cy1, r1 int, col1 Color, cx2, cy2, r2 
 			b := float64(-2 * (vx*dx + b_))
 			c := float64(dx*dx + c_)
 			var l float64
-			if d2xs[x-xmin] < r2sdy2s {
+			if d2xs[x-xmin] <= r2sdy2s {
 				l = 1
 			} else if a == 0 {
 				if b == 0 {
