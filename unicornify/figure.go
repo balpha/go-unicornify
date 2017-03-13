@@ -5,6 +5,8 @@ import (
 	"math"
 )
 
+type DrawingCallback func (t Thing, d *Drawer)
+
 type Thing interface {
 	Draw(img *image.RGBA, wv WorldView, shading bool)
 	Project(wv WorldView)
@@ -16,8 +18,16 @@ type Figure struct {
 	things []Thing
 }
 
-func (f *Figure) Add(things ...Thing) {
+type Drawer struct {
+	Figure *Figure
+	Image *image.RGBA
+	Wv WorldView
+	Shading bool
+	OnBeforeDrawThing DrawingCallback
+	OnAfterDrawThing DrawingCallback
+}
 
+func (f *Figure) Add(things ...Thing) {
 	f.things = append(f.things, things...)
 }
 
@@ -26,10 +36,31 @@ func (f *Figure) Project(wv WorldView) {
 		f.things[i].Project(wv)
 	}
 }
-
+func (f *Figure) NewDrawer(img *image.RGBA, wv WorldView, shading bool) *Drawer {
+	return &Drawer{
+		f,
+		img,
+		wv,
+		shading,
+		nil,
+		nil,
+	}
+}
 func (f *Figure) Draw(img *image.RGBA, wv WorldView, shading bool) {
-	for i := 0; i < len(f.things); i++ {
-		f.things[i].Draw(img, wv, shading)
+	f.NewDrawer(img, wv, shading).Draw()
+}
+
+func (d *Drawer) Draw() {
+	before := d.OnBeforeDrawThing
+	after := d.OnAfterDrawThing
+	for _, t := range d.Figure.things {
+		if (before != nil) {
+			before(t, d)
+		}
+		t.Draw(d.Image, d.Wv, d.Shading)
+		if (after != nil) {
+			after(t, d)
+		}
 	}
 }
 
