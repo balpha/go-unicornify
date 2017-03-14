@@ -60,13 +60,14 @@ func DrawGrass(img *image.RGBA, d GrassData, wv WorldView) {
 		baseSize := d.BladeHeightFar + rowf * (d.BladeHeightNear - d.BladeHeightFar)
 		colstep := 0.2*baseSize
 		
-		bd.BottomY = fsize*(d.Horizon + y*(1- d.Horizon))
-		if bd.BottomY < d.MinBottomY {
+		bottomY := fsize*(d.Horizon + y*(1- d.Horizon))
+		if bottomY < d.MinBottomY {
 			continue
 		}
 		
 		for col:=0.0; col <= 1; col+=colstep {
 			bd.BottomX = fsize*(col + baseSize*(rand.Random()*0.2 - 0.1))
+			bd.BottomY = bottomY + fsize*baseSize*rand.Random()*0.3
 			bd.Height = baseSize*fsize*(0.95+rand.Random()*0.1)
 			bd.BottomWidth = baseSize*fsize*(rand.Random()*0.04+0.1)
 			bd.TopWidth = baseSize*fsize*(rand.Random()*0.01)
@@ -96,7 +97,7 @@ func DrawGrassBlade(img *image.RGBA, d BladeData) {
 				continue
 			}
 			thiscol := d.Color
-			if x >= left +(right-left)*2/3 {
+			if (d.CurveStrength < 0 && x >= left +(right-left)*2/3) || (d.CurveStrength >= 0 && x <= left +(right-left)*1/3){
 				thiscol = Darken(thiscol, 10)
 			}
 			img.Set(x, y, thiscol)
