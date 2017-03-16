@@ -69,7 +69,9 @@ func (q Quad) Draw(img *image.RGBA, wv WorldView, shading bool) {
 		y2 := MixFloats(toBalls[0].Projection.Y(), toBalls[1].Projection.Y(), factor)
 		r1 := MixFloats(fromBalls[0].ProjectionRadius, fromBalls[1].ProjectionRadius, factor)
 		r2 := MixFloats(toBalls[0].ProjectionRadius, toBalls[1].ProjectionRadius, factor)
-		ConnectCirclesF(img, x1+wv.Shift[0], y1+wv.Shift[1], r1, col1, x2+wv.Shift[0], y2+wv.Shift[1], r2, col2, cp)
+		fx1, fy1 := wv.Shifted(x1, y1)
+		fx2, fy2 := wv.Shifted(x2, y2)
+		ConnectCirclesF(img, fx1, fy1, r1, col1, fx2, fy2, r2, col2, cp)
 	}
 }
 

@@ -56,16 +56,15 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 	}
 	uni := NewUnicorn(data)
 
-	wv := WorldView{
+	fsize := float64(size)
+
+	wv := OrthogonalWorldView{
 		AngleX:         xAngle,
 		AngleY:         yAngle,
 		Shift:          Point2d{100, 100},
 		RotationCenter: Point3d{150, 0, 0},
+		Scale:          unicornScaleFactor * fsize / 400.0,
 	}
-
-	fsize := float64(size)
-
-	uni.Scale(unicornScaleFactor * fsize / 400.0)
 
 	uni.Project(wv)
 	uni.Sort(wv)

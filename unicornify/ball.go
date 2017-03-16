@@ -2,7 +2,6 @@ package unicornify
 
 import (
 	"image"
-	"math"
 )
 
 type Ball struct {
@@ -29,22 +28,12 @@ func (b Ball) Draw(img *image.RGBA, wv WorldView, shading bool) {
 	if !shading {
 		sh = 0
 	}
-	CircleF(img, b.Projection.X()+wv.Shift[0], b.Projection.Y()+wv.Shift[1], b.ProjectionRadius, b.Color, DefaultGradientWithShading(sh))
+	x, y := ShiftedProjection(wv, b.Projection)
+	CircleF(img, x, y, b.ProjectionRadius, b.Color, DefaultGradientWithShading(sh))
 }
 
 func (b *Ball) Project(wv WorldView) {
-	x1, y1, z1 := b.Center.Shifted(wv.RotationCenter.Neg()).Decompose()
-
-	x2 := x1*math.Cos(wv.AngleY) - z1*math.Sin(wv.AngleY)
-	y2 := y1
-	z2 := x1*math.Sin(wv.AngleY) + z1*math.Cos(wv.AngleY)
-
-	x3 := x2
-	y3 := y2*math.Cos(wv.AngleX) - z2*math.Sin(wv.AngleX)
-	z3 := y2*math.Sin(wv.AngleX) + z2*math.Cos(wv.AngleX)
-
-	b.Projection = Point3d{x3, y3, z3}.Shifted(wv.RotationCenter)
-	b.ProjectionRadius = b.Radius
+	wv.ProjectBall(b)
 }
 
 func (b *Ball) SetDistance(distance float64, other Ball) {

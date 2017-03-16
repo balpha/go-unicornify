@@ -59,7 +59,9 @@ func (b Bone) Draw(img *image.RGBA, wv WorldView, shading bool) {
 	}
 	cp := DefaultGradientWithShading(sh)
 	if b.XFunc == nil && b.YFunc == nil {
-		ConnectCirclesF(img, p1.X()+wv.Shift[0], p1.Y()+wv.Shift[1], r1, c1, p2.X()+wv.Shift[0], p2.Y()+wv.Shift[1], r2, c2, cp)
+		fx1, fy1 := ShiftedProjection(wv, p1)
+		fx2, fy2 := ShiftedProjection(wv, p2)
+		ConnectCirclesF(img, fx1, fy1, r1, c1, fx2, fy2, r2, c2, cp)
 		return
 	}
 
@@ -91,7 +93,8 @@ func (b Bone) Draw(img *image.RGBA, wv WorldView, shading bool) {
 			sb2 := &Ball{Projection: Point3d{x, y, 0}, ProjectionRadius: r, Color: col}
 			NewShadedBone(sb1, sb2, b.Shading).Draw(img, wv, shading)
 		} else {
-			Circle(img, int(x+wv.Shift[0]+.5), int(y+wv.Shift[1]+.5), int(r+.5), col, cp)
+			fx, fy := wv.Shifted(x, y)
+			Circle(img, int(fx+.5), int(fy+.5), int(r+.5), col, cp)
 		}
 		prevX, prevY, prevR, prevCol = x, y, r, col
 	}

@@ -88,12 +88,6 @@ func (p Point3d) RotatedAround(other Point3d, angle float64, axis byte) Point3d 
 	return Point3d{rotated[reverse[0]], rotated[reverse[1]], rotated[reverse[2]]}.Shifted(other)
 }
 
-type WorldView struct {
-	AngleX, AngleY float64
-	RotationCenter Point3d
-	Shift          Point2d
-}
-
 func MixBytes(b1, b2 byte, f float64) byte {
 	return b1 + byte(f*(float64(b2)-float64(b1))+.5)
 }
