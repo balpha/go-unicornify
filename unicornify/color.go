@@ -16,7 +16,14 @@ var BlackRGBA = color.RGBA{0,0,0,255}
 func (c Color) RGBA() (r, g, b, a uint32) {
 	return color.RGBA{c.R, c.G, c.B, 255}.RGBA()
 }
-
+func (c Color) ToRGBA() color.RGBA {
+	return color.RGBA {
+		c.R,
+		c.G,
+		c.B,
+		255,
+	}
+}
 func MixColors(c1 Color, c2 Color, f float64) Color {
 	return Color{
 		R: MixBytes(c1.R, c2.R, f),

@@ -28,7 +28,7 @@ func (b Ball) Draw(img *image.RGBA, wv WorldView, shading bool) {
 	if (!shading) {
 		sh = 0
 	}
-	CircleF(img, b.Projection.X()+wv.Shift[0], b.Projection.Y()+wv.Shift[1], b.Radius, b.Color, sh)
+	CircleF(img, b.Projection.X()+wv.Shift[0], b.Projection.Y()+wv.Shift[1], b.Radius, b.Color, DefaultGradientWithShading(sh))
 }
 
 func (b *Ball) Project(wv WorldView) {

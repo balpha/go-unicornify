@@ -43,7 +43,7 @@ func DrawGrass(img *image.RGBA, d GrassData, wv WorldView) {
 		cy2 := d.ConstrainBone.Balls[1].Projection.Y() + wv.Shift[1]
 		r2 := d.ConstrainBone.Balls[1].Radius
 		white := Color{255,255,255}
-		ConnectCirclesF(mask, cx1, cy1,r1, white, cx2, cy2, r2, white, 0)
+		ConnectCirclesF(mask, cx1, cy1,r1, white, cx2, cy2, r2, white, DefaultGradientWithShading(0))
 		bd.ConstrainImage = mask
 	}
 	fsize := float64(img.Bounds().Dy())

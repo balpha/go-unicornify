@@ -101,6 +101,7 @@ func (d BackgroundData) Draw(im *image.RGBA, shading bool) {
 	// clouds
 
 	for i, pos := range d.CloudPositions {
+		
 		sizes := d.CloudSizes[i]
 		drawCloud(im, fsize*pos[0], fsize*pos[1], fsize*sizes[0], fsize*sizes[0]*sizes[1], d.Color("Sky", d.CloudLightnesses[i]), shading)
 	}
@@ -144,9 +145,10 @@ func drawCloud(img *image.RGBA, x, y, size1, size2 float64, col Color, shaded bo
 	if shaded {
 		shading = 0.25
 	}
-	CircleF(img, x-2*size1, y-size1, size1, col, shading)
-	CircleF(img, x+2*size1, y-size1, size1, col, shading)
-	TopHalfCircleF(img, x, y-size1, size2, col, shading)
+	cp := DefaultGradientWithShading(shading)
+	CircleF(img, x-2*size1, y-size1, size1, col, cp)
+	CircleF(img, x+2*size1, y-size1, size1, col, cp)
+	TopHalfCircleF(img, x, y-size1, size2, col, cp)
 	
 	xi := int(x + .5)
 	yi := int(y + .5)
@@ -157,10 +159,12 @@ func drawCloud(img *image.RGBA, x, y, size1, size2 float64, col Color, shaded bo
 			thiscol := col
 			if shaded {
 				dy := float64(py - (yi-size1i-1))
-				sh := float64(0.25) * math.Min(1, dy*dy / (float64(size1*size1)))
-				thiscol = Darken(col, uint8(255 * sh))
+				thiscolr := CircleShadingRGBA(0, dy, size1, col.ToRGBA(), cp)
+				img.Set(px, py, thiscolr)
+			} else {
+				img.Set(px, py, thiscol)
 			}
-			img.Set(px, py, thiscol)
+			
 		}
 	}
 }
