@@ -188,6 +188,10 @@ func ballSetImpl(t Thing, seen map[*Ball]bool, ch chan *Ball, outer bool) {
 		for _, s := range t.things {
 			ballSetImpl(s, seen, ch, false)
 		}
+	case *Quad:
+		for _, b := range t.Balls {
+			ballSetImpl(b, seen, ch, false)
+		}
 	default:
 		panic("unhandled thing type")
 	}
@@ -208,6 +212,15 @@ func maxZ(t Thing) float64 {
 			res = math.Max(res, maxZ(s))
 		}
 		return res
+	case *Quad:
+		max := maxZ(t.Balls[0])
+		min := maxZ(t.Balls[0])
+		for _, b := range t.Balls[1:] {
+			z := maxZ(b)
+			max = math.Max(max, z)
+			min = math.Min(min, z)
+		}
+		return (max+min)/2
 	default:
 		panic("maxZ doesn't handle this")
 	}
@@ -260,6 +273,13 @@ func Zat(t Thing, x, y float64) float64 {
 			res = math.Max(res, Zat(s, x, y))
 		}
 		return res
+	case *Quad:
+		b1 := NewBone(t.Balls[0], t.Balls[2])
+		b2 := NewBone(t.Balls[1], t.Balls[3])
+		if (isX && b1.Bounding().Dx() > b2.Bounding().Dx()) || (!isX && b1.Bounding().Dy() > b2.Bounding().Dy()) {
+			return Zat(b1, x, y)
+		}
+		return Zat(b2, x, y)
 	default:
 		panic("Zat doesn't handle this")
 	}
