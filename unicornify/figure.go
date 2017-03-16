@@ -5,7 +5,7 @@ import (
 	"math"
 )
 
-type DrawingCallback func (t Thing, d *Drawer)
+type DrawingCallback func(t Thing, d *Drawer)
 
 type Thing interface {
 	Draw(img *image.RGBA, wv WorldView, shading bool)
@@ -19,12 +19,12 @@ type Figure struct {
 }
 
 type Drawer struct {
-	Figure *Figure
-	Image *image.RGBA
-	Wv WorldView
-	Shading bool
+	Figure            *Figure
+	Image             *image.RGBA
+	Wv                WorldView
+	Shading           bool
 	OnBeforeDrawThing DrawingCallback
-	OnAfterDrawThing DrawingCallback
+	OnAfterDrawThing  DrawingCallback
 }
 
 func (f *Figure) Add(things ...Thing) {
@@ -54,11 +54,11 @@ func (d *Drawer) Draw() {
 	before := d.OnBeforeDrawThing
 	after := d.OnAfterDrawThing
 	for _, t := range d.Figure.things {
-		if (before != nil) {
+		if before != nil {
 			before(t, d)
 		}
 		t.Draw(d.Image, d.Wv, d.Shading)
-		if (after != nil) {
+		if after != nil {
 			after(t, d)
 		}
 	}
@@ -77,7 +77,7 @@ func (f *Figure) Sort(wv WorldView) {
 				firstT, secondT := f.things[first], f.things[second]
 				if firstT.Bounding().Overlaps(secondT.Bounding()) {
 					inter := firstT.Bounding().Intersect(secondT.Bounding())
-					c := Compare(wv, firstT, secondT, float64(inter.Min.X + inter.Dx()/2), float64(inter.Min.Y + inter.Dy()/2))
+					c := Compare(wv, firstT, secondT, float64(inter.Min.X+inter.Dx()/2), float64(inter.Min.Y+inter.Dy()/2))
 					switch {
 					case c < 0: // first is in front of second
 						drawAfter[first][second] = true
@@ -220,7 +220,7 @@ func maxZ(t Thing) float64 {
 			max = math.Max(max, z)
 			min = math.Min(min, z)
 		}
-		return (max+min)/2
+		return (max + min) / 2
 	default:
 		panic("maxZ doesn't handle this")
 	}
@@ -252,21 +252,21 @@ func Zat(t Thing, x, y float64) float64 {
 		if c < c1 && c < c2 {
 			if c1 < c2 {
 				return p1.Z()
-			} else  {
+			} else {
 				return p2.Z()
 			}
 		}
 		if c > c1 && c > c2 {
 			if c1 > c2 {
 				return p1.Z()
-			} else  {
+			} else {
 				return p2.Z()
 			}
 		}
 		if c1 == c2 {
-			return p1.Z() + (p2.Z() - p1.Z()) / 2
+			return p1.Z() + (p2.Z()-p1.Z())/2
 		}
-		return p1.Z() + (p2.Z() - p1.Z()) * (c - c1) / (c2 - c1)
+		return p1.Z() + (p2.Z()-p1.Z())*(c-c1)/(c2-c1)
 	case *Figure:
 		res := Zat(t.things[0], x, y)
 		for _, s := range t.things[1:] {
@@ -286,21 +286,21 @@ func Zat(t Thing, x, y float64) float64 {
 }
 
 func Compare(wv WorldView, first, second Thing, x, y float64) int {
-	
+
 	// special case: if we have two bones that share a ball, compare
 	// the two non-shared balls instead
 
 	b1, b1_ok := first.(*Bone)
 	b2, b2_ok := second.(*Bone)
-	
+
 	if b1_ok && b2_ok {
-		for i:=0; i<=3; i++ {
+		for i := 0; i <= 3; i++ {
 			if b1.Balls[i&1] == b2.Balls[(i&2)>>1] {
 				return Compare(wv, b1.Balls[1-(i&1)], b2.Balls[1-((i&2)>>1)], x, 1)
 			}
 		}
 	}
-	
+
 	z1 := Zat(first, x, y)
 	z2 := Zat(second, x, y)
 	switch {

@@ -7,12 +7,12 @@ import (
 )
 
 const (
-	CirclyGradient = iota
+	CirclyGradient   = iota
 	DistanceGradient = iota
 )
 
 type ColoringParameters struct {
-	Shading float64
+	Shading  float64
 	Gradient int
 }
 
@@ -21,28 +21,28 @@ func DefaultGradientWithShading(shading float64) ColoringParameters {
 }
 
 func CircleShadingRGBA(x, y, r float64, col color.RGBA, coloring ColoringParameters) color.RGBA {
-	if coloring.Shading == 0 || y == 0{
+	if coloring.Shading == 0 || y == 0 {
 		return col
 	}
 	var sh float64
 	lighten := 128.0
 	switch coloring.Gradient {
-		case CirclyGradient:
-			sh1 := 1 - math.Sqrt(1 - math.Min(1, y*y/(r*r)))
-			d := math.Sqrt(x*x+y*y)/r
-			sh2 := math.Abs(y)/r
-			sh = (1-d)*sh1 + d*sh2
-		case DistanceGradient:
-			sh = math.Abs(y/r)
-			lighten = 255
-		default:
-			panic("unknown gradient")
+	case CirclyGradient:
+		sh1 := 1 - math.Sqrt(1-math.Min(1, y*y/(r*r)))
+		d := math.Sqrt(x*x+y*y) / r
+		sh2 := math.Abs(y) / r
+		sh = (1-d)*sh1 + d*sh2
+	case DistanceGradient:
+		sh = math.Abs(y / r)
+		lighten = 255
+	default:
+		panic("unknown gradient")
 	}
-	
+
 	if y > 0 {
-		return DarkenRGBA(col, uint8(255 * sh*coloring.Shading))
+		return DarkenRGBA(col, uint8(255*sh*coloring.Shading))
 	} else {
-		return LightenRGBA(col, uint8(lighten * sh*coloring.Shading))
+		return LightenRGBA(col, uint8(lighten*sh*coloring.Shading))
 	}
 }
 
@@ -83,7 +83,7 @@ func circleImpl(img *image.RGBA, cx, cy, r int, col Color, topHalfOnly bool, col
 		}
 
 		for x := left; x <= right; x++ {
-			thiscol := CircleShadingRGBA(float64(x - cx), float64(y - cy), float64(r), colrgba, coloring)
+			thiscol := CircleShadingRGBA(float64(x-cx), float64(y-cy), float64(r), colrgba, coloring)
 			img.SetRGBA(x, y, thiscol)
 		}
 	}
@@ -196,22 +196,22 @@ func ConnectCircles(img *image.RGBA, cx1, cy1, r1 int, col1 Color, cx2, cy2, r2 
 				l = 0
 			}
 			if coloring.Gradient == DistanceGradient { // TODO: all of the above isn't necessary in that case
-				d1s := float64(dx*dx+dy*dy)
-				d2s := float64((x-cx2)*(x-cx2)+(y-cy2)*(y-cy2))
+				d1s := float64(dx*dx + dy*dy)
+				d2s := float64((x-cx2)*(x-cx2) + (y-cy2)*(y-cy2))
 				d1 := math.Sqrt(d1s)
 				d2 := math.Sqrt(d2s)
 				if d1+d2 == 0 {
 					l = 1
 				} else {
-					l = d1 / (d1+d2)
+					l = d1 / (d1 + d2)
 				}
 			}
 			col := cols[int(l*255)]
-			if (coloring.Shading > 0) {
-					tcy := float64(cy1) + l * float64(cy2-cy1)
-					tcx := float64(cx1) + l * float64(cx2-cx1)
-					tr := float64(r1) + l * float64(r2-r1)
-					col = CircleShadingRGBA(float64(x) - tcx, float64(y) - tcy, tr, col, coloring)
+			if coloring.Shading > 0 {
+				tcy := float64(cy1) + l*float64(cy2-cy1)
+				tcx := float64(cx1) + l*float64(cx2-cx1)
+				tr := float64(r1) + l*float64(r2-r1)
+				col = CircleShadingRGBA(float64(x)-tcx, float64(y)-tcy, tr, col, coloring)
 			}
 			img.SetRGBA(x, y, col)
 		}

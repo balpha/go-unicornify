@@ -6,8 +6,8 @@ import (
 )
 
 type Quad struct {
-	Balls        [4]*Ball
-	Shading      float64
+	Balls   [4]*Ball
+	Shading float64
 }
 
 func NewQuad(b1, b2, b3, b4 *Ball) *Quad {
@@ -23,28 +23,30 @@ func (q *Quad) Project(wv WorldView) {
 		b.Project(wv)
 	}
 }
+
 var Foo = true
+
 func (q Quad) Draw(img *image.RGBA, wv WorldView, shading bool) {
 
 	sh := q.Shading
-	if (!shading) {
+	if !shading {
 		sh = 0
 	}
 	b1 := q.Balls[0]
 	b2 := q.Balls[1]
 	b3 := q.Balls[2]
 	b4 := q.Balls[3]
-	
-	steps12 := math.Max(math.Abs(b2.Projection.X() - b1.Projection.X()), math.Abs(b2.Projection.Y() - b1.Projection.Y())) + 1
-	steps23 := math.Max(math.Abs(b3.Projection.X() - b2.Projection.X()), math.Abs(b3.Projection.Y() - b2.Projection.Y())) + 1
-	steps34 := math.Max(math.Abs(b4.Projection.X() - b3.Projection.X()), math.Abs(b4.Projection.Y() - b3.Projection.Y())) + 1
-	steps41 := math.Max(math.Abs(b1.Projection.X() - b4.Projection.X()), math.Abs(b1.Projection.Y() - b4.Projection.Y())) + 1
-	
+
+	steps12 := math.Max(math.Abs(b2.Projection.X()-b1.Projection.X()), math.Abs(b2.Projection.Y()-b1.Projection.Y())) + 1
+	steps23 := math.Max(math.Abs(b3.Projection.X()-b2.Projection.X()), math.Abs(b3.Projection.Y()-b2.Projection.Y())) + 1
+	steps34 := math.Max(math.Abs(b4.Projection.X()-b3.Projection.X()), math.Abs(b4.Projection.Y()-b3.Projection.Y())) + 1
+	steps41 := math.Max(math.Abs(b1.Projection.X()-b4.Projection.X()), math.Abs(b1.Projection.Y()-b4.Projection.Y())) + 1
+
 	stepsU := math.Max(steps12, steps34)
 	stepsV := math.Max(steps23, steps41)
-	
+
 	var fromBalls, toBalls [2]*Ball
-	
+
 	if stepsU > stepsV {
 		fromBalls = [2]*Ball{b1, b4}
 		toBalls = [2]*Ball{b2, b3}
@@ -52,11 +54,11 @@ func (q Quad) Draw(img *image.RGBA, wv WorldView, shading bool) {
 		fromBalls = [2]*Ball{b1, b2}
 		toBalls = [2]*Ball{b4, b3}
 	}
-	
+
 	steps, _ := math.Modf(math.Max(stepsU, stepsV))
 
 	cp := ColoringParameters{sh, DistanceGradient}
-	
+
 	for step := float64(0); step <= steps; step++ {
 		factor := step / steps
 		col1 := MixColors(fromBalls[0].Color, fromBalls[1].Color, factor)
@@ -93,7 +95,7 @@ func (q *Quad) Sort(wv WorldView) {
 	oldBalls := q.Balls
 	q.Balls = [4]*Ball{}
 	for i < 4 {
-		q.Balls[i] = oldBalls[(i + maxZi) % 4]
+		q.Balls[i] = oldBalls[(i+maxZi)%4]
 		i++
 	}
 }

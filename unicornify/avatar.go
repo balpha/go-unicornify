@@ -39,17 +39,16 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 	data.Randomize3(rand)
 	grassdata.Randomize(rand)
 
-	grassSlope := 2 + 4*(20 - xAngle/DEGREE)/40
-	grassScale := 1 + (unicornScaleFactor - 0.5) / 2.5
-	grassdata.BladeHeightNear = (0.02 + 0.02 * rand.Random())*grassScale
+	grassSlope := 2 + 4*(20-xAngle/DEGREE)/40
+	grassScale := 1 + (unicornScaleFactor-0.5)/2.5
+	grassdata.BladeHeightNear = (0.02 + 0.02*rand.Random()) * grassScale
 	grassdata.BladeHeightFar = grassdata.BladeHeightNear / grassSlope
 	// end randomization
 
 	grassdata.Horizon = bgdata.Horizon
 	grassdata.Color1 = bgdata.Color("Land", bgdata.LandLight)
 	grassdata.Color2 = bgdata.Color("Land", bgdata.LandLight/2)
-	
-	
+
 	if (yAngle-90*DEGREE)*data.NeckTilt > 0 {
 		// The unicorn should look at the camera.
 		data.NeckTilt *= -1
@@ -96,8 +95,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 	if withBackground {
 		bgdata.Draw(img, shading)
 	}
-	
-	
+
 	shins := make(map[Thing]int)
 	ymax := -99999.0
 	ymax2 := -99999.0
@@ -112,36 +110,36 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 		}
 		ymaxproj = math.Max(ymaxproj, l.Hoof.Projection.Y())
 	}
-	
-	hoofHorizonDist := ((ymaxproj + wv.Shift[1]) / fsize - bgdata.Horizon) / (1-bgdata.Horizon) // 0 = bottom foot at horizon
+
+	hoofHorizonDist := ((ymaxproj+wv.Shift[1])/fsize - bgdata.Horizon) / (1 - bgdata.Horizon) // 0 = bottom foot at horizon
 	if hoofHorizonDist < 0.5 {
-		gf := 1+ (1 - hoofHorizonDist / 0.5) * 2
+		gf := 1 + (1-hoofHorizonDist/0.5)*2
 		grassdata.BladeHeightFar *= gf
 		grassdata.BladeHeightNear *= gf
 	}
 
-	isGroundHoof := func (h *Ball, s *Bone) bool {
+	isGroundHoof := func(h *Ball, s *Bone) bool {
 		r := s.Bounding()
 		if r.Dx()*2 > r.Dy()*3 {
 			return false
 		}
 		if xAngle >= -3*DEGREE {
-			yground := math.Min(ymax - h.Radius, ymax2)
-			return yground - h.Center.Y()<=0
+			yground := math.Min(ymax-h.Radius, ymax2)
+			return yground-h.Center.Y() <= 0
 		} else {
-			return math.Abs(ymaxproj - h.Projection.Y())<=h.Radius
+			return math.Abs(ymaxproj-h.Projection.Y()) <= h.Radius
 		}
 	}
-	
+
 	unidrawer := uni.NewDrawer(img, wv, shading)
-	
+
 	if grass {
-		unidrawer.OnAfterDrawThing = func (t Thing, d *Drawer) {
+		unidrawer.OnAfterDrawThing = func(t Thing, d *Drawer) {
 			i, ok := shins[t]
 			if ok {
 				shin := t.(*Bone)
 				hoof := uni.Legs[i].Hoof
-				if (!isGroundHoof(hoof, shin)) {
+				if !isGroundHoof(hoof, shin) {
 					return
 				}
 				grassdata.MinBottomY = hoof.Projection.Y() + wv.Shift[1] + hoof.Radius
@@ -150,9 +148,9 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 			}
 		}
 		DrawGrass(img, grassdata, wv)
-	}	
-	
+	}
+
 	unidrawer.Draw()
-	
+
 	return nil, img
 }

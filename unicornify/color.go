@@ -11,13 +11,13 @@ type Color struct {
 }
 
 var Black = Color{0, 0, 0}
-var BlackRGBA = color.RGBA{0,0,0,255}
+var BlackRGBA = color.RGBA{0, 0, 0, 255}
 
 func (c Color) RGBA() (r, g, b, a uint32) {
 	return color.RGBA{c.R, c.G, c.B, 255}.RGBA()
 }
 func (c Color) ToRGBA() color.RGBA {
-	return color.RGBA {
+	return color.RGBA{
 		c.R,
 		c.G,
 		c.B,
@@ -39,21 +39,21 @@ func MixColorsRGBA(c1 color.RGBA, c2 color.RGBA, f float64) color.RGBA {
 		A: 255,
 	}
 }
-func min (a,b uint8) uint8 {
+func min(a, b uint8) uint8 {
 	if a > b {
 		return b
 	}
 	return a
 }
 func Darken(c Color, d uint8) Color {
-	return Color{ 
+	return Color{
 		R: c.R - min(d, c.R),
 		G: c.G - min(d, c.G),
 		B: c.B - min(d, c.B),
 	}
 }
 func DarkenRGBA(c color.RGBA, d uint8) color.RGBA {
-	return color.RGBA{ 
+	return color.RGBA{
 		R: c.R - min(d, c.R),
 		G: c.G - min(d, c.G),
 		B: c.B - min(d, c.B),
@@ -61,17 +61,17 @@ func DarkenRGBA(c color.RGBA, d uint8) color.RGBA {
 	}
 }
 func Lighten(c Color, d uint8) Color {
-	return Color{ 
-		R: c.R + min(d, 255 - c.R),
-		G: c.G + min(d, 255 - c.G),
-		B: c.B + min(d, 255 - c.B),
+	return Color{
+		R: c.R + min(d, 255-c.R),
+		G: c.G + min(d, 255-c.G),
+		B: c.B + min(d, 255-c.B),
 	}
 }
 func LightenRGBA(c color.RGBA, d uint8) color.RGBA {
-	return color.RGBA{ 
-		R: c.R + min(d, 255 - c.R),
-		G: c.G + min(d, 255 - c.G),
-		B: c.B + min(d, 255 - c.B),
+	return color.RGBA{
+		R: c.R + min(d, 255-c.R),
+		G: c.G + min(d, 255-c.G),
+		B: c.B + min(d, 255-c.B),
 		A: c.A,
 	}
 }
