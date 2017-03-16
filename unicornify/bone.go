@@ -47,8 +47,8 @@ func (b Bone) Draw(img *image.RGBA, wv WorldView, shading bool) {
 	p1 := b1.Projection
 	p2 := b2.Projection
 
-	r1 := b1.Radius
-	r2 := b2.Radius
+	r1 := b1.ProjectionRadius
+	r2 := b2.ProjectionRadius
 
 	c1 := b1.Color
 	c2 := b2.Color
@@ -87,8 +87,8 @@ func (b Bone) Draw(img *image.RGBA, wv WorldView, shading bool) {
 		r := MixFloats(r1, r2, factor)
 
 		if nonlin && step > 0 && (math.Abs(x-prevX) > 1.1 || math.Abs(y-prevY) > 1.1) {
-			sb1 := &Ball{Projection: Point3d{prevX, prevY, 0}, Radius: prevR, Color: prevCol}
-			sb2 := &Ball{Projection: Point3d{x, y, 0}, Radius: r, Color: col}
+			sb1 := &Ball{Projection: Point3d{prevX, prevY, 0}, ProjectionRadius: prevR, Color: prevCol}
+			sb2 := &Ball{Projection: Point3d{x, y, 0}, ProjectionRadius: r, Color: col}
 			NewShadedBone(sb1, sb2, b.Shading).Draw(img, wv, shading)
 		} else {
 			Circle(img, int(x+wv.Shift[0]+.5), int(y+wv.Shift[1]+.5), int(r+.5), col, cp)

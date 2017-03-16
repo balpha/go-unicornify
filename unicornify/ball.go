@@ -6,10 +6,11 @@ import (
 )
 
 type Ball struct {
-	Center     Point3d
-	Radius     float64
-	Color      Color
-	Projection Point3d
+	Center           Point3d
+	Radius           float64
+	Color            Color
+	Projection       Point3d
+	ProjectionRadius float64
 }
 
 func NewBall(x, y, z, r float64, c Color) *Ball {
@@ -28,7 +29,7 @@ func (b Ball) Draw(img *image.RGBA, wv WorldView, shading bool) {
 	if !shading {
 		sh = 0
 	}
-	CircleF(img, b.Projection.X()+wv.Shift[0], b.Projection.Y()+wv.Shift[1], b.Radius, b.Color, DefaultGradientWithShading(sh))
+	CircleF(img, b.Projection.X()+wv.Shift[0], b.Projection.Y()+wv.Shift[1], b.ProjectionRadius, b.Color, DefaultGradientWithShading(sh))
 }
 
 func (b *Ball) Project(wv WorldView) {
@@ -43,6 +44,7 @@ func (b *Ball) Project(wv WorldView) {
 	z3 := y2*math.Sin(wv.AngleX) + z2*math.Cos(wv.AngleX)
 
 	b.Projection = Point3d{x3, y3, z3}.Shifted(wv.RotationCenter)
+	b.ProjectionRadius = b.Radius
 }
 
 func (b *Ball) SetDistance(distance float64, other Ball) {
@@ -64,7 +66,7 @@ func (b *Ball) SetGap(gap float64, other Ball) {
 
 func (b Ball) Bounding() image.Rectangle {
 	x, y, _ := b.Projection.Decompose()
-	r := b.Radius
+	r := b.ProjectionRadius
 	return image.Rect(int(x-r), int(y-r), int(x+r+2), int(y+r+1))
 }
 

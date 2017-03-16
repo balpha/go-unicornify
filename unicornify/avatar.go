@@ -127,7 +127,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 			yground := math.Min(ymax-h.Radius, ymax2)
 			return yground-h.Center.Y() <= 0
 		} else {
-			return math.Abs(ymaxproj-h.Projection.Y()) <= h.Radius
+			return math.Abs(ymaxproj-h.Projection.Y()) <= h.ProjectionRadius
 		}
 	}
 
@@ -142,7 +142,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 				if !isGroundHoof(hoof, shin) {
 					return
 				}
-				grassdata.MinBottomY = hoof.Projection.Y() + wv.Shift[1] + hoof.Radius
+				grassdata.MinBottomY = hoof.Projection.Y() + wv.Shift[1] + hoof.ProjectionRadius
 				grassdata.ConstrainBone = shin
 				DrawGrass(img, grassdata, wv)
 			}
