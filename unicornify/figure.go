@@ -76,7 +76,8 @@ func (f *Figure) Sort(wv WorldView) {
 			if !drawAfter[first][second] && !drawAfter[second][first] {
 				firstT, secondT := f.things[first], f.things[second]
 				if firstT.Bounding().Overlaps(secondT.Bounding()) {
-					c := Compare(wv, firstT, secondT)
+					inter := firstT.Bounding().Intersect(secondT.Bounding())
+					c := Compare(wv, firstT, secondT, float64(inter.Min.X + inter.Dx()/2), float64(inter.Min.Y + inter.Dy()/2))
 					switch {
 					case c < 0: // first is in front of second
 						drawAfter[first][second] = true
@@ -97,7 +98,9 @@ func (f *Figure) Sort(wv WorldView) {
 			delete(drawAfter, i) // according to the spec, deleting while iterating over the map shouldn't cause issues
 		}
 	}
-	for len(drawAfter) > 0 {
+	first := true
+	for first || len(drawAfter) > 0 {
+		first = false
 		for len(queue) > 0 {
 			popped := queue[len(queue)-1]
 			queue = queue[:len(queue)-1]
@@ -210,12 +213,76 @@ func maxZ(t Thing) float64 {
 	}
 }
 
-// much simpler than the version in python, but (at least for the limited
-// perspectives in the avatar generator) just as okay results, sometimes
-// even better (see c55de3e9a7424bd984e6e56cedba5be8)
-func Compare(wv WorldView, first, second Thing) int {
-	z1 := maxZ(first)
-	z2 := maxZ(second)
+func Zat(t Thing, x, y float64) float64 {
+	r := t.Bounding()
+	var c float64
+	isX := r.Dx() > r.Dy()
+	if isX {
+		c = x
+	} else {
+		c = y
+	}
+	switch t := t.(type) {
+	case *Ball:
+		return t.Projection.Z()
+	case *Bone:
+		p1 := t.Balls[0].Projection
+		p2 := t.Balls[1].Projection
+		var c1, c2 float64
+		if isX {
+			c1 = p1.X()
+			c2 = p2.X()
+		} else {
+			c1 = p1.Y()
+			c2 = p2.Y()
+		}
+		if c < c1 && c < c2 {
+			if c1 < c2 {
+				return p1.Z()
+			} else  {
+				return p2.Z()
+			}
+		}
+		if c > c1 && c > c2 {
+			if c1 > c2 {
+				return p1.Z()
+			} else  {
+				return p2.Z()
+			}
+		}
+		if c1 == c2 {
+			return p1.Z() + (p2.Z() - p1.Z()) / 2
+		}
+		return p1.Z() + (p2.Z() - p1.Z()) * (c - c1) / (c2 - c1)
+	case *Figure:
+		res := Zat(t.things[0], x, y)
+		for _, s := range t.things[1:] {
+			res = math.Max(res, Zat(s, x, y))
+		}
+		return res
+	default:
+		panic("Zat doesn't handle this")
+	}
+}
+
+func Compare(wv WorldView, first, second Thing, x, y float64) int {
+	
+	// special case: if we have two bones that share a ball, compare
+	// the two non-shared balls instead
+
+	b1, b1_ok := first.(*Bone)
+	b2, b2_ok := second.(*Bone)
+	
+	if b1_ok && b2_ok {
+		for i:=0; i<=3; i++ {
+			if b1.Balls[i&1] == b2.Balls[(i&2)>>1] {
+				return Compare(wv, b1.Balls[1-(i&1)], b2.Balls[1-((i&2)>>1)], x, 1)
+			}
+		}
+	}
+	
+	z1 := Zat(first, x, y)
+	z2 := Zat(second, x, y)
 	switch {
 	case z1 < z2:
 		return -1
