@@ -268,11 +268,11 @@ func Zat(t Thing, x, y float64) float64 {
 		}
 		return p1.Z() + (p2.Z()-p1.Z())*(c-c1)/(c2-c1)
 	case *Figure:
-		res := Zat(t.things[0], x, y)
-		for _, s := range t.things[1:] {
-			res = math.Max(res, Zat(s, x, y))
+		res := 0.0
+		for _, s := range t.things {
+			res += Zat(s, x, y)
 		}
-		return res
+		return res / float64(len(t.things))
 	case *Quad:
 		b1 := NewBone(t.Balls[0], t.Balls[2])
 		b2 := NewBone(t.Balls[1], t.Balls[3])
@@ -296,7 +296,20 @@ func Compare(wv WorldView, first, second Thing, x, y float64) int {
 	if b1_ok && b2_ok {
 		for i := 0; i <= 3; i++ {
 			if b1.Balls[i&1] == b2.Balls[(i&2)>>1] {
-				return Compare(wv, b1.Balls[1-(i&1)], b2.Balls[1-((i&2)>>1)], x, 1)
+				v1 := b1.Balls[1-(i&1)].Projection.Shifted(b1.Balls[i&1].Projection.Neg())
+				u1 := v1.Times(1 / v1.Length())
+				v2 := b2.Balls[1-((i&2)>>1)].Projection.Shifted(b2.Balls[(i&2)>>1].Projection.Neg())
+				u2 := v2.Times(1 / v2.Length())
+
+				switch {
+				case u1.Z() < u2.Z():
+					return -1
+				case u1.Z() > u2.Z():
+					return 1
+				default:
+					return 0
+				}
+
 			}
 		}
 	}
