@@ -64,10 +64,8 @@ func NewUnicorn(data UnicornData) *Unicorn {
 		b.RotateAround(*u.Head, data.FaceTilt, 0)
 	}
 
-	u.Add(
-		NewBone(u.Head, u.Shoulder),
-		u.Hairs,
-	)
+	u.Add(NewBone(u.Head, u.Shoulder))
+	u.Add(u.Hairs.things...)
 
 	for b := range u.BallSet() {
 		b.RotateAround(*u.Shoulder, data.NeckTilt, 1)
