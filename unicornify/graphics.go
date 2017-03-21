@@ -132,14 +132,13 @@ type ConnectedSpheresTracer struct {
 	xmin, xmax, ymin, ymax         int
 	v1, v2, v3, a1, a2, a3, ra, dr float64
 	col1, col2                     Color
-	NoLight                        bool
 }
 
 func (t *ConnectedSpheresTracer) GetBounds() image.Rectangle {
 	return image.Rect(t.xmin, t.ymin, t.xmax, t.ymax)
 }
 
-func (t *ConnectedSpheresTracer) Trace(x, y int) (bool, float64, Color) {
+func (t *ConnectedSpheresTracer) Trace(x, y int) (bool, float64, Point3d, Color) {
 	p1 := float64(x)
 	p2 := float64(y)
 
@@ -170,7 +169,7 @@ func (t *ConnectedSpheresTracer) Trace(x, y int) (bool, float64, Color) {
 
 		disc := sqr(ps)/4 - qs
 		if disc < 0 {
-			return false, 0, Black
+			return false, 0, NoDirection, Black
 		}
 
 		s3 = -ps/2 - math.Sqrt(disc)
@@ -203,7 +202,7 @@ func (t *ConnectedSpheresTracer) Trace(x, y int) (bool, float64, Color) {
 
 		discm := sqr(pm)/4 - qm
 		if discm < 0 {
-			return false, 0, Black
+			return false, 0, NoDirection, Black
 		}
 		p3 = -pm/2 - math.Sqrt(discm)
 	} else {
@@ -214,24 +213,7 @@ func (t *ConnectedSpheresTracer) Trace(x, y int) (bool, float64, Color) {
 	d2 := p2 - m2
 	d3 := p3 - m3
 
-	_, _ = d1, d3
-
-	d := Point3d{d1, d2, d3}.Times(1 / r)
-	light := Point3d{-0.1, 1, 0.2}
-	light = light.Times(1 / light.Length())
-	sp := d.ScalarProd(light)
-
-	col := MixColors(t.col1, t.col2, math.Max(0, math.Min(1, f)))
-	var thiscol Color = col
-	if !t.NoLight {
-		if sp >= 0 {
-			thiscol = Darken(col, uint8(sp*96))
-		} else {
-			thiscol = Lighten(col, uint8(-sp*48))
-		}
-	}
-
-	return true, p3, thiscol
+	return true, p3, Point3d{d1, d2, d3}, MixColors(t.col1, t.col2, math.Max(0, math.Min(1, f)))
 }
 
 func NewConnectedSpheresTracer(img *image.RGBA, wv WorldView, cx1, cy1, cz1, r1 float64, col1 Color, cx2, cy2, cz2, r2 float64, col2 Color) *ConnectedSpheresTracer {

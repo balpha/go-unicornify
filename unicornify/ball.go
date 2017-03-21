@@ -23,10 +23,10 @@ func NewBallP(center Point3d, r float64, c Color) *Ball {
 	}
 }
 
-func (b *Ball) GetTracer(img *image.RGBA, wv WorldView, shading bool) Tracer {
+func (b *Ball) GetTracer(img *image.RGBA, wv WorldView) Tracer {
 	b2 := *b
 	b2.Projection[0] += 2 * b.ProjectionRadius
-	result := NewBone(b, b).GetTracer(img, wv, shading)
+	result := NewBone(b, b).GetTracer(img, wv)
 	return result
 }
 func (b *Ball) Project(wv WorldView) {
@@ -48,6 +48,24 @@ func (b *Ball) MoveToSphere(other Ball) {
 
 func (b *Ball) SetGap(gap float64, other Ball) {
 	b.SetDistance(b.Radius+other.Radius+gap, other)
+}
+
+func (b *Ball) MoveToBone(bone Bone) {
+	b1 := bone.Balls[0]
+	b2 := bone.Balls[1]
+	span := b2.Center.Shifted(b1.Center.Neg())
+	bs := b.Center.Shifted(b1.Center.Neg())
+	f := span.ScalarProd(bs) / (span.Length() * bs.Length())
+	if f <= 0 {
+		b.MoveToSphere(*b1)
+	} else if f >= 1 {
+		b.MoveToSphere(*b2)
+	} else {
+		ibc := b1.Center.Shifted(span.Times(f))
+		ib := NewBall(ibc.X(), ibc.Y(), ibc.Z(), b1.Radius+f*(b2.Radius-b1.Radius), Color{})
+		b.MoveToSphere(*ib)
+
+	}
 }
 
 func (b Ball) Bounding() image.Rectangle {

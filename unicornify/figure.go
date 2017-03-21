@@ -7,7 +7,7 @@ import (
 type Thing interface {
 	Project(wv WorldView)
 	Bounding() image.Rectangle
-	GetTracer(img *image.RGBA, wv WorldView, shading bool) Tracer
+	GetTracer(img *image.RGBA, wv WorldView) Tracer
 }
 
 type Figure struct {
@@ -26,26 +26,33 @@ func (f *Figure) Project(wv WorldView) {
 
 type FigureTracer struct {
 	*GroupTracer
-	f       *Figure
-	r       image.Rectangle
-	img     *image.RGBA
-	wv      WorldView
-	shading bool
+	f   *Figure
+	r   image.Rectangle
+	img *image.RGBA
+	wv  WorldView
 }
 
-func (f *Figure) GetTracer(img *image.RGBA, wv WorldView, shading bool) Tracer {
+func (f *Figure) GetTracer(img *image.RGBA, wv WorldView) Tracer {
 	gt := NewGroupTracer()
 
 	for _, th := range f.things {
-		gt.Add(th.GetTracer(img, wv, shading))
+		gt.Add(th.GetTracer(img, wv))
 	}
-	return &FigureTracer{GroupTracer: gt, f: f, img: img, wv: wv, shading: shading}
+	return &FigureTracer{GroupTracer: gt, f: f, img: img, wv: wv}
 }
 
-func (f *Figure) Draw(img *image.RGBA, wv WorldView, shading bool, yCallback func(int), additionalTracers ...Tracer) {
-	tracer := f.GetTracer(img, wv, shading).(*FigureTracer)
+func (f *Figure) Draw(img *image.RGBA, wv WorldView, wrappingTracer WrappingTracer, yCallback func(int), additionalTracers ...Tracer) {
+	tracer := f.GetTracer(img, wv).(*FigureTracer)
 	tracer.Add(additionalTracers...)
-	DrawTracer(tracer, img, yCallback)
+
+	var final Tracer = tracer
+
+	if wrappingTracer != nil {
+		wrappingTracer.Add(tracer)
+		final = wrappingTracer
+	}
+
+	DrawTracer(final, img, yCallback)
 }
 
 func (f *Figure) Bounding() image.Rectangle {

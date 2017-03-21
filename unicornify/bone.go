@@ -8,7 +8,6 @@ import (
 type Bone struct {
 	Balls        [2]*Ball
 	XFunc, YFunc func(float64) float64 // may be nil
-	Shading      float64
 }
 
 func NewBone(b1, b2 *Ball) *Bone {
@@ -26,7 +25,7 @@ func NewNonLinBone(b1, b2 *Ball, xFunc, yFunc func(float64) float64) *Bone {
 }
 
 func NewShadedNonLinBone(b1, b2 *Ball, xFunc, yFunc func(float64) float64, shading float64) *Bone {
-	return &Bone{[2]*Ball{b1, b2}, xFunc, yFunc, shading}
+	return &Bone{[2]*Ball{b1, b2}, xFunc, yFunc}
 }
 
 func reverse(f func(float64) float64) func(float64) float64 {
@@ -40,7 +39,7 @@ func (b *Bone) Project(wv WorldView) {
 	b.Balls[1].Project(wv)
 }
 
-func (b *Bone) GetTracer(img *image.RGBA, wv WorldView, shading bool) Tracer {
+func (b *Bone) GetTracer(img *image.RGBA, wv WorldView) Tracer {
 	b1 := b.Balls[0]
 	b2 := b.Balls[1]
 
@@ -52,13 +51,6 @@ func (b *Bone) GetTracer(img *image.RGBA, wv WorldView, shading bool) Tracer {
 
 	c1 := b1.Color
 	c2 := b2.Color
-
-	sh := b.Shading
-	if !shading {
-		sh = 0
-	}
-	cp := DefaultGradientWithShading(sh)
-	_ = cp
 
 	if b.XFunc != nil || b.YFunc != nil {
 		bounding := b.Bounding()
@@ -75,6 +67,7 @@ func (b *Bone) GetTracer(img *image.RGBA, wv WorldView, shading bool) Tracer {
 		prevCol = c1
 		prevZ = p1.Z()
 		result := NewGroupTracer()
+		subgroup := NewGroupTracer()
 		for i := 1; i <= parts; i++ {
 			factor := float64(i) / float64(parts)
 			col := MixColors(c1, c2, factor)
@@ -98,10 +91,13 @@ func (b *Bone) GetTracer(img *image.RGBA, wv WorldView, shading bool) Tracer {
 			z := MixFloats(p1.Z(), p2.Z(), factor)
 			r := MixFloats(r1, r2, factor)
 			tracer := NewConnectedSpheresTracer(img, wv, prevX, prevY, prevZ, prevR, prevCol, x, y, z, r, col /*, cp*/)
-			if !shading {
-				tracer.NoLight = true
+			subgroup.Add(tracer)
+
+			if i%5 == 0 || i == parts {
+				result.Add(subgroup)
+				subgroup = NewGroupTracer()
 			}
-			result.Add(tracer)
+
 			prevX, prevY, prevZ, prevR, prevCol = x, y, z, r, col
 		}
 
@@ -111,9 +107,6 @@ func (b *Bone) GetTracer(img *image.RGBA, wv WorldView, shading bool) Tracer {
 		fx1, fy1 := ShiftedProjection(wv, p1)
 		fx2, fy2 := ShiftedProjection(wv, p2)
 		tracer := NewConnectedSpheresTracer(img, wv, fx1, fy1, p1.Z(), r1, c1, fx2, fy2, p2.Z(), r2, c2 /*, cp*/)
-		if !shading {
-			tracer.NoLight = true
-		}
 		return tracer
 	}
 	return nil

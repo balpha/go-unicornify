@@ -83,7 +83,7 @@ func (d *UnicornData) Randomize1(rand *pyrand.Random) {
 	d.HairAngles = make([]float64, hairCount)
 	d.HairTipLightnesses = make([]int, hairCount)
 	d.HairStraightnesses = make([]float64, hairCount)
-	d.MakeHair1(rand, 0, hairCount / 2)
+	d.MakeHair1(rand, 0, hairCount/2)
 
 }
 
@@ -131,7 +131,7 @@ func (d *UnicornData) MakeHair1(rand *pyrand.Random, start, count int) {
 	}
 	for i := start; i < start+count; i++ {
 		d.HairAngles[i] = float64(rand.RandInt(0, 60)) * DEGREE
-	}	
+	}
 }
 
 func (d *UnicornData) MakeHair2(rand *pyrand.Random, start, count int) {
@@ -140,5 +140,5 @@ func (d *UnicornData) MakeHair2(rand *pyrand.Random, start, count int) {
 	}
 	for i := start; i < start+count; i++ {
 		d.HairStraightnesses[i] = float64(rand.RandInt(-40, 40))
-	}	
+	}
 }

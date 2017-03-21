@@ -47,7 +47,9 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 	focalLength := 250 + rand.Random()*250 // only used for perspective camera
 
 	data.Randomize4(rand)
-	
+
+	lightDirection := Point3d{rand.Random()*16 - 8, 10, rand.Random() * 3} // note this is based on projected, not original, coordinate system
+
 	// end randomization
 
 	grassdata.Horizon = bgdata.Horizon
@@ -71,12 +73,12 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 
 	if persp {
 		lookAtPoint := uni.Shoulder.Center.Shifted(uni.Head.Center.Shifted(uni.Shoulder.Center.Neg()).Times(factor))
-		cp := lookAtPoint.Shifted(Point3d{0, 0, -focalLength}).RotatedAround(uni.Head.Center, -xAngle, 0).RotatedAround(uni.Head.Center, -yAngle, 1)
+		cp := lookAtPoint.Shifted(Point3d{0, 0, -3 * focalLength}).RotatedAround(uni.Head.Center, -xAngle, 0).RotatedAround(uni.Head.Center, -yAngle, 1)
 		wv = PerspectiveWorldView{
 			CameraPosition: cp,
 			LookAtPoint:    lookAtPoint,
 			Shift:          Point2d{0.5 * fsize, factor*fsize/3 + (1-factor)*fsize/2},
-			Scale:          ((unicornScaleFactor-0.5)/2.5*2 + 0.5) * fsize / 200.0,
+			Scale:          ((unicornScaleFactor-0.5)/2.5*2 + 0.5) * fsize / 140.0,
 			FocalLength:    focalLength,
 		}
 	} else {
@@ -182,8 +184,15 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 		}
 		grassdata.MinBottomY = 0
 		DrawGrass(img, grassdata, wv)
+
 	}
 
-	uni.Draw(img, wv, shading, yCallback, grassTracers...)
+	var lightingWrapper WrappingTracer = nil
+	if shading {
+		lightingWrapper = NewDirectionalLightTracer(lightDirection)
+	}
+
+	uni.Draw(img, wv, lightingWrapper, yCallback, grassTracers...)
+
 	return nil, img
 }

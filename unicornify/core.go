@@ -43,6 +43,10 @@ func (p Point3d) Times(v float64) Point3d {
 	}
 }
 
+func (p Point3d) Minus(other Point3d) Point3d {
+	return p.Shifted(other.Neg())
+}
+
 func (p Point3d) ScalarProd(v Point3d) float64 {
 	return p[0]*v[0] + p[1]*v[1] + p[2]*v[2]
 }
@@ -98,4 +102,57 @@ func MixBytes(b1, b2 byte, f float64) byte {
 
 func MixFloats(f1, f2, f float64) float64 {
 	return f1 + f*(f2-f1)
+}
+
+func IntersectionOfPlaneAndLine(p0, ep1, ep2, l0, el Point3d) (ok bool, intersection Point3d) {
+	A := [][]float64{
+		[]float64{ep1.X(), ep2.X(), -el.X()},
+		[]float64{ep1.Y(), ep2.Y(), -el.Y()},
+		[]float64{ep1.Z(), ep2.Z(), -el.Z()},
+	}
+	b := l0.Minus(p0)
+	// need to solve Ax = b where x = (fp1, fp2, fl)
+
+	swaps := make([][]int, 0)
+	for i := 0; i <= 2; i++ {
+		if A[i][i] != 0 {
+			continue
+		}
+		for j := i + 1; j <= 2; j++ {
+			if A[j][i] != 0 {
+				swaps = append(swaps, []int{i, j})
+				A[i], A[j] = A[j], A[i]
+				b[i], b[j] = b[j], b[i]
+				break
+			}
+		}
+	}
+
+	for i := 0; i <= 1; i++ {
+		for k := i + 1; k <= 2; k++ {
+			A[k][i] = A[k][i] / A[i][i] //!
+			for j := i + 1; j <= 2; j++ {
+				A[k][j] = A[k][j] - A[k][i]*A[i][j]
+			}
+		}
+	}
+
+	y := Point3d{}
+	for i := 0; i <= 2; i++ {
+		y[i] = b[i]
+		for k := 0; k <= i-1; k++ {
+			y[i] -= A[i][k] * y[k]
+		}
+	}
+
+	x := Point3d{}
+	for i := 2; i >= 0; i-- {
+		x[i] = y[i]
+		for k := i + 1; k <= 2; k++ {
+			x[i] -= A[i][k] * x[k]
+		}
+		x[i] /= A[i][i]
+	}
+
+	return true, x
 }

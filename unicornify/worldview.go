@@ -86,23 +86,35 @@ func (wv PerspectiveWorldView) ProjectBall(b *Ball) {
 
 	uy := Point3d{y1, y2, y3}
 
-	px := ux.ScalarProd(cam2c)
-	py := uy.ScalarProd(cam2c)
-	pz := n.ScalarProd(cam2c)
-
-	f := wv.PerspectiveScale(pz)
-
-	b.Projection = Point3d{px * f, py * f, pz * wv.Scale}
-
-	pzr := pz - b.Radius
-
-	b.ProjectionRadius = b.Radius * wv.PerspectiveScale(pzr)
-}
-
-func (wv PerspectiveWorldView) PerspectiveScale(projectedZ float64) float64 {
-	if projectedZ >= 0 {
-		return 1.0 / (projectedZ/wv.FocalLength + 1) * wv.Scale
+	ok, intf := IntersectionOfPlaneAndLine(wv.CameraPosition.Shifted(n.Times(wv.FocalLength)), ux, uy, wv.CameraPosition, b.Center.Minus(wv.CameraPosition))
+	if !ok { //FIXME
+		b.Projection = Point3d{}
+		b.ProjectionRadius = b.Radius
 	} else {
-		return (-projectedZ/wv.FocalLength + 1) * wv.Scale
+		b.Projection = Point3d{intf[0], intf[1], cam2c.Length()}.Times(wv.Scale)
+		count := 0.0
+		max := 0.0
+		for dx := -1.0; dx <= 1; dx += 1 {
+			for dy := -1.0; dy <= 1; dy += 1 {
+				for dz := -1.0; dz <= 1; dz += 1 {
+					shift := Point3d{dx, dy, dz}
+					if shift.Length() == 0 {
+						continue
+					}
+					shift = shift.Times(b.Radius / shift.Length())
+					ok, intf := IntersectionOfPlaneAndLine(wv.CameraPosition.Shifted(n.Times(wv.FocalLength)), ux, uy, wv.CameraPosition, b.Center.Shifted(shift).Minus(wv.CameraPosition))
+					if ok {
+						count++
+						rp := Point3d{intf[0], intf[1], 0}.Times(wv.Scale)
+						max = math.Max(max, math.Sqrt(sqr(rp[0]-b.Projection[0])+sqr(rp[1]-b.Projection[1])))
+					}
+				}
+			}
+
+		}
+
+		b.ProjectionRadius = max
 	}
+	return
+
 }
