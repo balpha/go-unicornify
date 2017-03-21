@@ -139,6 +139,9 @@ func (t *ConnectedSpheresTracer) GetBounds() image.Rectangle {
 }
 
 func (t *ConnectedSpheresTracer) Trace(x, y int) (bool, float64, Point3d, Color) {
+	return t.traceImpl(x, y, false)
+}
+func (t *ConnectedSpheresTracer) traceImpl(x, y int, backside bool) (bool, float64, Point3d, Color) {
 	p1 := float64(x)
 	p2 := float64(y)
 
@@ -172,7 +175,12 @@ func (t *ConnectedSpheresTracer) Trace(x, y int) (bool, float64, Point3d, Color)
 			return false, 0, NoDirection, Black
 		}
 
-		s3 = -ps/2 - math.Sqrt(disc)
+		if backside {
+			s3 = -ps/2 + math.Sqrt(disc)
+		} else {
+			s3 = -ps/2 - math.Sqrt(disc)
+		}
+		
 
 		kf := c1
 		mf := -2*s3*t.v3 + c2
@@ -204,7 +212,12 @@ func (t *ConnectedSpheresTracer) Trace(x, y int) (bool, float64, Point3d, Color)
 		if discm < 0 {
 			return false, 0, NoDirection, Black
 		}
-		p3 = -pm/2 - math.Sqrt(discm)
+		if backside {
+			p3 = -pm/2 + math.Sqrt(discm)
+		} else {
+			p3 = -pm/2 - math.Sqrt(discm)
+		}
+		
 	} else {
 		p3 = s3 + t.a3
 	}
@@ -214,6 +227,23 @@ func (t *ConnectedSpheresTracer) Trace(x, y int) (bool, float64, Point3d, Color)
 	d3 := p3 - m3
 
 	return true, p3, Point3d{d1, d2, d3}, MixColors(t.col1, t.col2, math.Max(0, math.Min(1, f)))
+}
+
+func (t *ConnectedSpheresTracer) TraceDeep(x, y int) (bool, TraceIntervals) {
+	ok1, z1, dir1, col1 := t.traceImpl(x, y, false)
+	ok2, z2, dir2, col2 := t.traceImpl(x, y, true)
+	if ok1 {
+		if !ok2 {
+			panic("Huh? That makes no sense")
+		}
+		return true, TraceIntervals{
+			TraceInterval{
+				Start: TraceResult{z1,dir1,col1},
+				End: TraceResult{z2,dir2,col2},
+			},
+		}
+	}
+	return false, TraceIntervals{}
 }
 
 func NewConnectedSpheresTracer(img *image.RGBA, wv WorldView, cx1, cy1, cz1, r1 float64, col1 Color, cx2, cy2, cz2, r2 float64, col2 Color) *ConnectedSpheresTracer {
