@@ -41,7 +41,7 @@ func (f *Figure) GetTracer(img *image.RGBA, wv WorldView) Tracer {
 	return &FigureTracer{GroupTracer: gt, f: f, img: img, wv: wv}
 }
 
-func (f *Figure) Draw(img *image.RGBA, wv WorldView, wrappingTracer WrappingTracer, yCallback func(int), additionalTracers ...Tracer) {
+func (f *Figure) Draw(img *image.RGBA, wv WorldView, wrappingTracer WrappingTracer, parallelize bool, yCallback func(int), additionalTracers ...Tracer) {
 	tracer := f.GetTracer(img, wv).(*FigureTracer)
 	tracer.Add(additionalTracers...)
 
@@ -51,8 +51,12 @@ func (f *Figure) Draw(img *image.RGBA, wv WorldView, wrappingTracer WrappingTrac
 		wrappingTracer.Add(tracer)
 		final = wrappingTracer
 	}
-
-	DrawTracer(final, img, yCallback)
+	if parallelize {
+		DrawTracerParallel(final, img, yCallback, 8)
+	} else {
+		DrawTracer(final, img, yCallback)
+	}
+	
 }
 
 func (f *Figure) Bounding() image.Rectangle {

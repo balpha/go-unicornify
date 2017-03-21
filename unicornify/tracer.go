@@ -16,8 +16,8 @@ type WrappingTracer interface {
 	Add(tracers ...Tracer)
 }
 
-func DrawTracer(t Tracer, img *image.RGBA, yCallback func(int)) {
-	r := img.Bounds().Intersect(t.GetBounds())
+func DrawTracerPartial(t Tracer, img *image.RGBA, yCallback func(int), bounds image.Rectangle, c chan bool) {
+	r := bounds.Intersect(t.GetBounds())
 	for y := r.Min.Y; y <= r.Max.Y; y++ {
 		for x := r.Min.X; x <= r.Max.X; x++ {
 			any, _, _, col := t.Trace(x, y)
@@ -28,6 +28,29 @@ func DrawTracer(t Tracer, img *image.RGBA, yCallback func(int)) {
 		if yCallback != nil {
 			yCallback(y)
 		}
+	}
+	if c != nil {
+		c <- true
+	}
+}
+func DrawTracer(t Tracer, img *image.RGBA, yCallback func(int)) {
+	DrawTracerPartial(t, img, yCallback, img.Bounds(), nil)
+}
+func DrawTracerParallel(t Tracer, img *image.RGBA, yCallback func(int), partsRoot int) {
+	full := img.Bounds()
+	c := make(chan bool)
+	parts := partsRoot * partsRoot
+	partsLeft := parts
+	for x := 0; x < partsRoot; x++ {
+		for y := 0; y < partsRoot; y++ {
+			r := image.Rect(full.Dx()*x/partsRoot, full.Dy()*y/partsRoot, full.Dx()*(x+1)/partsRoot-1, full.Dy()*(y+1)/partsRoot-1)
+			go DrawTracerPartial(t, img, nil, r, c)
+		}
+	}
+	for partsLeft > 0 {
+		<-c
+		partsLeft--
+		yCallback(full.Dy() * (parts - partsLeft) / parts)
 	}
 }
 

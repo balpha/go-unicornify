@@ -17,7 +17,7 @@ import (
 
 func main() {
 	var mail, hash string
-	var random, free, zoomOut, nodouble, shading, grass, persp bool
+	var random, free, zoomOut, nodouble, shading, grass, persp, serial bool
 	var size int
 	var outfile string
 
@@ -32,6 +32,8 @@ func main() {
 	flag.BoolVar(&shading, "shading", false, "add shading that gives the unicorns more depth")
 	flag.BoolVar(&grass, "grass", false, "add grass to the ground")
 	flag.BoolVar(&persp, "persp", false, "use a perspective camera")
+	flag.BoolVar(&serial, "serial", false, "do not parallelize the drawing")
+	
 	flag.Parse()
 	inputs := 0
 	if mail != "" {
@@ -76,7 +78,7 @@ func main() {
 		fmt.Printf("\r%v%%    ", perc)
 	}
 
-	err, img := unicornify.MakeAvatar(hash, actualSize, !free, zoomOut, shading, grass, persp, yCallback)
+	err, img := unicornify.MakeAvatar(hash, actualSize, !free, zoomOut, shading, grass, persp, !serial, yCallback)
 	fmt.Print("\r    \r")
 	if err != nil {
 		os.Stderr.WriteString("Not a valid hexadecimal number: " + hash + "\n")

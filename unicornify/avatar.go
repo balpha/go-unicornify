@@ -6,7 +6,7 @@ import (
 	"math"
 )
 
-func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shading bool, grass bool, persp bool, yCallback func(int)) (error, *image.RGBA) {
+func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shading bool, grass bool, persp bool, parallelize bool, yCallback func(int)) (error, *image.RGBA) {
 
 	rand := pyrand.NewRandom()
 	err := rand.SeedFromHexString(hash)
@@ -192,7 +192,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 		lightingWrapper = NewDirectionalLightTracer(lightDirection)
 	}
 
-	uni.Draw(img, wv, lightingWrapper, yCallback, grassTracers...)
+	uni.Draw(img, wv, lightingWrapper, parallelize, yCallback, grassTracers...)
 
 	return nil, img
 }
