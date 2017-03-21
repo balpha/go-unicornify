@@ -64,7 +64,7 @@ func NewUnicorn(data UnicornData) *Unicorn {
 	}
 
 	u.Add(NewBone(u.Head, u.Shoulder))
-	u.Add(u.Hairs.things...)
+	u.Add(u.Hairs)
 
 	for b := range u.BallSet() {
 		b.RotateAround(*u.Shoulder, data.NeckTilt, 1)
@@ -112,20 +112,20 @@ func (u *Unicorn) makeEyes(data UnicornData) {
 func (u *Unicorn) makeMane(data UnicornData) {
 	u.Hairs = &Figure{}
 
-	hairTop := NewBallP(u.Head.Center.Shifted(Point3d{10, -5, 0}), 8, Color{})
+	hairTop := NewBallP(u.Head.Center.Shifted(Point3d{10, -5, 0}), 5, Color{})
 	hairTop.MoveToSphere(*u.Head)
-	hairBottom := NewBallP(u.Shoulder.Center.Shifted(Point3d{10, -15, 0}), 8, Color{})
+	hairBottom := NewBallP(u.Shoulder.Center.Shifted(Point3d{10, -15, 0}), 5, Color{})
 	hairBottom.MoveToSphere(*u.Shoulder)
 	hairSpan := hairBottom.Center.Shifted(hairTop.Center.Neg())
 	for i := 0; i < len(data.HairStarts); i++ {
 		p := hairTop.Center.Shifted(hairSpan.Times(data.HairStarts[i] / 100.0))
-		hairStart := NewBallP(p, 8, data.Color("Hair", 60))
+		hairStart := NewBallP(p, 5, data.Color("Hair", 60))
 		endPoint := Point3d{
 			p.X() + data.HairLengths[i],
 			p.Y(),
 			p.Z() + data.HairStraightnesses[i],
 		}
-		hairEnd := NewBallP(endPoint, 4, data.Color("Hair", data.HairTipLightnesses[i]))
+		hairEnd := NewBallP(endPoint, 2, data.Color("Hair", data.HairTipLightnesses[i]))
 		hairEnd.RotateAround(*hairStart, -data.HairAngles[i], 2)
 		hair := NewNonLinBone(hairStart, hairEnd, nil, gammaFunc(data.HairGammas[i]))
 		u.Hairs.Add(hair)

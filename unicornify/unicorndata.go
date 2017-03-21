@@ -76,38 +76,20 @@ func (d *UnicornData) Randomize1(rand *pyrand.Random) {
 	_ = rand.RandInt(0, 60)
 	d.HairHue = (d.BodyHue + rand.RandInt(60, 300)) % 360
 	d.HairSat = rand.RandInt(60, 100)
-	hairCount := rand.RandInt(12, 30)
+	hairCount := rand.RandInt(12, 30) * 2
 	d.HairStarts = make([]float64, hairCount)
 	d.HairGammas = make([]float64, hairCount)
 	d.HairLengths = make([]float64, hairCount)
 	d.HairAngles = make([]float64, hairCount)
-
-	for i := 0; i < hairCount; i++ {
-		d.HairStarts[i] = float64(rand.RandInt(-20, 100))
-	}
-	for i := 0; i < hairCount; i++ {
-		d.HairGammas[i] = .3 + rand.Random()*3
-	}
-	for i := 0; i < hairCount; i++ {
-		d.HairLengths[i] = float64(rand.RandInt(80, 150))
-	}
-	for i := 0; i < hairCount; i++ {
-		d.HairAngles[i] = float64(rand.RandInt(0, 60)) * DEGREE
-	}
+	d.HairTipLightnesses = make([]int, hairCount)
+	d.HairStraightnesses = make([]float64, hairCount)
+	d.MakeHair1(rand, 0, hairCount / 2)
 
 }
 
 func (d *UnicornData) Randomize2(rand *pyrand.Random) {
 	hairCount := len(d.HairStarts)
-	d.HairTipLightnesses = make([]int, hairCount)
-	d.HairStraightnesses = make([]float64, hairCount)
-
-	for i := 0; i < hairCount; i++ {
-		d.HairTipLightnesses[i] = rand.RandInt(40, 85)
-	}
-	for i := 0; i < hairCount; i++ {
-		d.HairStraightnesses[i] = float64(rand.RandInt(-40, 40))
-	}
+	d.MakeHair2(rand, 0, hairCount/2)
 
 	d.TailStartSize = float64(rand.RandInt(4, 10))
 	d.TailEndSize = float64(rand.RandInt(10, 20))
@@ -130,4 +112,33 @@ func (d *UnicornData) Randomize2(rand *pyrand.Random) {
 func (d *UnicornData) Randomize3(rand *pyrand.Random) {
 	d.PoseKind = Poses[rand.Choice(len(Poses))]
 	d.PosePhase = rand.Random()
+}
+func (d *UnicornData) Randomize4(rand *pyrand.Random) {
+	halfCount := len(d.HairStarts) / 2
+	d.MakeHair1(rand, halfCount, halfCount)
+	d.MakeHair2(rand, halfCount, halfCount)
+}
+
+func (d *UnicornData) MakeHair1(rand *pyrand.Random, start, count int) {
+	for i := start; i < start+count; i++ {
+		d.HairStarts[i] = float64(rand.RandInt(-20, 100))
+	}
+	for i := start; i < start+count; i++ {
+		d.HairGammas[i] = .3 + rand.Random()*3
+	}
+	for i := start; i < start+count; i++ {
+		d.HairLengths[i] = float64(rand.RandInt(80, 150))
+	}
+	for i := start; i < start+count; i++ {
+		d.HairAngles[i] = float64(rand.RandInt(0, 60)) * DEGREE
+	}	
+}
+
+func (d *UnicornData) MakeHair2(rand *pyrand.Random, start, count int) {
+	for i := start; i < start+count; i++ {
+		d.HairTipLightnesses[i] = rand.RandInt(40, 85)
+	}
+	for i := start; i < start+count; i++ {
+		d.HairStraightnesses[i] = float64(rand.RandInt(-40, 40))
+	}	
 }

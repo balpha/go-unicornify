@@ -45,6 +45,9 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 	grassdata.BladeHeightFar = grassdata.BladeHeightNear / grassSlope
 
 	focalLength := 250 + rand.Random()*250 // only used for perspective camera
+
+	data.Randomize4(rand)
+	
 	// end randomization
 
 	grassdata.Horizon = bgdata.Horizon
