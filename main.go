@@ -70,7 +70,14 @@ func main() {
 	if !nodouble {
 		actualSize *= 2
 	}
-	err, img := unicornify.MakeAvatar(hash, actualSize, !free, zoomOut, shading, grass, persp)
+
+	yCallback := func(y int) {
+		perc := (y + 1) * 100 / actualSize
+		fmt.Printf("\r%v%%    ", perc)
+	}
+
+	err, img := unicornify.MakeAvatar(hash, actualSize, !free, zoomOut, shading, grass, persp, yCallback)
+	fmt.Print("\r    \r")
 	if err != nil {
 		os.Stderr.WriteString("Not a valid hexadecimal number: " + hash + "\n")
 		os.Exit(1)

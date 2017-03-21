@@ -4,14 +4,14 @@ import "math"
 
 type Unicorn struct {
 	Figure
-	Head, Snout, Shoulder, Butt, HornOnset, HornTip               *Ball
-	EyeLeft, EyeRight, IrisLeft, IrisRight, PupilLeft, PupilRight *Ball
-	TailStart, TailEnd                                            *Ball
-	BrowLeftInner, BrowLeftMiddle, BrowLeftOuter                  *Ball
-	BrowRightInner, BrowRightMiddle, BrowRightOuter               *Ball
-	Tail                                                          *Bone
-	Legs                                                          [4]Leg
-	Hairs                                                         *Figure
+	Head, Snout, Shoulder, Butt, HornOnset, HornTip *Ball
+	EyeLeft, EyeRight, PupilLeft, PupilRight        *Ball
+	TailStart, TailEnd                              *Ball
+	BrowLeftInner, BrowLeftMiddle, BrowLeftOuter    *Ball
+	BrowRightInner, BrowRightMiddle, BrowRightOuter *Ball
+	Tail                                            *Bone
+	Legs                                            [4]Leg
+	Hairs                                           *Figure
 }
 
 var red = Color{255, 0, 0}
@@ -51,8 +51,7 @@ func NewUnicorn(data UnicornData) *Unicorn {
 	u.Add(
 		NewBone(u.Snout, u.Head),
 		NewBone(u.HornOnset, u.HornTip),
-		NewShadedBone(u.EyeLeft, u.IrisLeft, 0.1),
-		NewShadedBone(u.EyeRight, u.IrisRight, 0.1),
+		u.EyeLeft, u.EyeRight,
 		u.PupilLeft, u.PupilRight,
 		NewNonLinBone(u.BrowLeftInner, u.BrowLeftMiddle, square, nil),
 		NewNonLinBone(u.BrowLeftMiddle, u.BrowLeftOuter, math.Sqrt, nil),
@@ -79,7 +78,6 @@ func NewUnicorn(data UnicornData) *Unicorn {
 	for _, l := range u.Legs {
 		u.Add(l.Calf, l.Shin)
 	}
-
 	return u
 }
 
@@ -89,13 +87,10 @@ func (u *Unicorn) makeEyes(data UnicornData) {
 	u.EyeRight = NewBall(-10, 3, 5, data.EyeSize, Color{255, 255, 255})
 	u.EyeRight.SetGap(5, *u.Head)
 
-	u.IrisLeft = NewBallP(u.EyeLeft.Center.Shifted(Point3d{-4, 0, 0}), data.IrisSize, data.Color("Iris", 80))
-	u.IrisRight = NewBallP(u.EyeRight.Center.Shifted(Point3d{-4, 0, 0}), data.IrisSize, data.Color("Iris", 80))
-
-	u.PupilLeft = NewBallP(u.IrisLeft.Center.Shifted(Point3d{-10, 0, 0}), data.PupilSize, Color{0, 0, 0})
-	u.PupilLeft.MoveToSphere(*u.IrisLeft)
-	u.PupilRight = NewBallP(u.IrisRight.Center.Shifted(Point3d{-10, 0, 0}), data.PupilSize, Color{0, 0, 0})
-	u.PupilRight.MoveToSphere(*u.IrisRight)
+	u.PupilLeft = NewBallP(u.EyeLeft.Center.Shifted(Point3d{-1, 0, 0}), data.PupilSize, Color{0, 0, 0})
+	u.PupilLeft.MoveToSphere(*u.EyeLeft)
+	u.PupilRight = NewBallP(u.EyeRight.Center.Shifted(Point3d{-1, 0, 0}), data.PupilSize, Color{0, 0, 0})
+	u.PupilRight.MoveToSphere(*u.EyeRight)
 
 	moodDelta := data.BrowMood * 3
 

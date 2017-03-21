@@ -40,7 +40,7 @@ func (b *Bone) Project(wv WorldView) {
 	b.Balls[1].Project(wv)
 }
 
-func (b Bone) Draw(img *image.RGBA, wv WorldView, shading bool) {
+func (b *Bone) GetTracer(img *image.RGBA, wv WorldView, shading bool) Tracer {
 	b1 := b.Balls[0]
 	b2 := b.Balls[1]
 
@@ -58,63 +58,67 @@ func (b Bone) Draw(img *image.RGBA, wv WorldView, shading bool) {
 		sh = 0
 	}
 	cp := DefaultGradientWithShading(sh)
-	if b.XFunc == nil && b.YFunc == nil {
+	_ = cp
+
+	if b.XFunc != nil || b.YFunc != nil {
+		bounding := b.Bounding()
+		parts := bounding.Dy()
+		if bounding.Dx() > bounding.Dy() {
+			parts = bounding.Dx()
+		}
+
+		var prevX, prevY, prevR, prevZ, prevFx, prevFy float64
+		var prevCol Color
+
+		prevX, prevY = ShiftedProjection(wv, p1)
+		prevR = r1
+		prevCol = c1
+		prevZ = p1.Z()
+		result := NewGroupTracer()
+		for i := 1; i <= parts; i++ {
+			factor := float64(i) / float64(parts)
+			col := MixColors(c1, c2, factor)
+			fx, fy := factor, factor
+			if f := b.XFunc; f != nil {
+				fx = f(fx)
+			}
+			if f := b.YFunc; f != nil {
+				fy = f(fy)
+			}
+			if i > 1 && i < parts && math.Abs((prevFx/prevFy)/(fx/fy)-1) < 0.02 {
+				continue
+			}
+			prevFx = fx
+			prevFy = fy
+			x := MixFloats(p1.X(), p2.X(), fx)
+			y := MixFloats(p1.Y(), p2.Y(), fy)
+
+			x, y = wv.Shifted(x, y)
+
+			z := MixFloats(p1.Z(), p2.Z(), factor)
+			r := MixFloats(r1, r2, factor)
+			tracer := NewConnectedSpheresTracer(img, wv, prevX, prevY, prevZ, prevR, prevCol, x, y, z, r, col /*, cp*/)
+			if !shading {
+				tracer.NoLight = true
+			}
+			result.Add(tracer)
+			prevX, prevY, prevZ, prevR, prevCol = x, y, z, r, col
+		}
+
+		return result
+
+	} else {
 		fx1, fy1 := ShiftedProjection(wv, p1)
 		fx2, fy2 := ShiftedProjection(wv, p2)
-		ConnectCirclesF(img, fx1, fy1, r1, c1, fx2, fy2, r2, c2, cp)
-		return
+		tracer := NewConnectedSpheresTracer(img, wv, fx1, fy1, p1.Z(), r1, c1, fx2, fy2, p2.Z(), r2, c2 /*, cp*/)
+		if !shading {
+			tracer.NoLight = true
+		}
+		return tracer
 	}
-
-	steps := math.Max(math.Abs(p2.X()-p1.X()), math.Abs(p2.Y()-p1.Y()))
-
-	// The centers might be very close, but the radii my be more apart,
-	// hence the following step. without it, the eye/iris gradient sometimes
-	// only has two or three steps
-	steps, _ = math.Modf(math.Max(steps, math.Abs(r2-r1)) + 1)
-	var prevX, prevY, prevR float64
-	var prevCol Color
-	nonlin := b.XFunc != nil || b.YFunc != nil
-	for step := float64(0); step <= steps; step++ {
-		factor := step / steps
-		col := MixColors(c1, c2, factor)
-		fx, fy := factor, factor
-		if f := b.XFunc; f != nil {
-			fx = f(fx)
-		}
-		if f := b.YFunc; f != nil {
-			fy = f(fy)
-		}
-		x := MixFloats(p1.X(), p2.X(), fx)
-		y := MixFloats(p1.Y(), p2.Y(), fy)
-		r := MixFloats(r1, r2, factor)
-
-		if nonlin && step > 0 && (math.Abs(x-prevX) > 1.1 || math.Abs(y-prevY) > 1.1) {
-			sb1 := &Ball{Projection: Point3d{prevX, prevY, 0}, ProjectionRadius: prevR, Color: prevCol}
-			sb2 := &Ball{Projection: Point3d{x, y, 0}, ProjectionRadius: r, Color: col}
-			NewShadedBone(sb1, sb2, b.Shading).Draw(img, wv, shading)
-		} else {
-			fx, fy := wv.Shifted(x, y)
-			Circle(img, int(fx+.5), int(fy+.5), int(r+.5), col, cp)
-		}
-		prevX, prevY, prevR, prevCol = x, y, r, col
-	}
+	return nil
 }
 
 func (b Bone) Bounding() image.Rectangle {
 	return b.Balls[0].Bounding().Union(b.Balls[1].Bounding())
-}
-
-func (b *Bone) Sort(wv WorldView) {
-	z1 := b.Balls[0].Projection.Z()
-	z2 := b.Balls[1].Projection.Z()
-	if z1 < z2 {
-		b.Balls[0], b.Balls[1] = b.Balls[1], b.Balls[0]
-		if b.XFunc != nil {
-			b.XFunc = reverse(b.XFunc)
-		}
-		if b.YFunc != nil {
-			b.YFunc = reverse(b.YFunc)
-		}
-	}
-
 }

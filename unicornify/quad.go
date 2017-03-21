@@ -1,5 +1,6 @@
 package unicornify
 
+/*
 import (
 	"image"
 	"math"
@@ -55,7 +56,7 @@ func (q Quad) Draw(img *image.RGBA, wv WorldView, shading bool) {
 		toBalls = [2]*Ball{b4, b3}
 	}
 
-	steps, _ := math.Modf(math.Max(stepsU, stepsV))
+	steps, _ := math.Modf(math.Min(stepsU, stepsV))
 
 	cp := ColoringParameters{sh, DistanceGradient}
 
@@ -101,3 +102,4 @@ func (q *Quad) Sort(wv WorldView) {
 		i++
 	}
 }
+*/

@@ -6,7 +6,7 @@ import (
 	"math"
 )
 
-func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shading bool, grass bool, persp bool) (error, *image.RGBA) {
+func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shading bool, grass bool, persp bool, yCallback func(int)) (error, *image.RGBA) {
 
 	rand := pyrand.NewRandom()
 	err := rand.SeedFromHexString(hash)
@@ -45,7 +45,6 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 	grassdata.BladeHeightFar = grassdata.BladeHeightNear / grassSlope
 
 	focalLength := 250 + rand.Random()*250 // only used for perspective camera
-
 	// end randomization
 
 	grassdata.Horizon = bgdata.Horizon
@@ -88,7 +87,6 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 	}
 
 	uni.Project(wv)
-	uni.Sort(wv)
 
 	if !persp {
 
@@ -117,61 +115,72 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 		bgdata.Draw(img, shading)
 	}
 
-	shins := make(map[Thing]int)
-	ymax := -99999.0
-	ymax2 := -99999.0
-	ymaxproj := -99999.0
-	for i, l := range uni.Legs {
-		shins[l.Shin] = i
-		if l.Hoof.Center.Y() > ymax {
-			ymax2 = ymax
-			ymax = l.Hoof.Center.Y()
-		} else if l.Hoof.Center.Y() > ymax2 {
-			ymax2 = l.Hoof.Center.Y()
-		}
-		ymaxproj = math.Max(ymaxproj, l.Hoof.Projection.Y())
-	}
-	_, shiftedY := wv.Shifted(0, ymaxproj)
-	hoofHorizonDist := (shiftedY/fsize - bgdata.Horizon) / (1 - bgdata.Horizon) // 0 = bottom foot at horizon
-	if hoofHorizonDist < 0.5 {
-		gf := 1 + (1-hoofHorizonDist/0.5)*2
-		grassdata.BladeHeightFar *= gf
-		grassdata.BladeHeightNear *= gf
-	}
-
-	isGroundHoof := func(h *Ball, s *Bone) bool {
-		r := s.Bounding()
-		if r.Dx()*2 > r.Dy()*3 {
-			return false
-		}
-		if xAngle >= -3*DEGREE {
-			yground := math.Min(ymax-h.Radius, ymax2)
-			return yground-h.Center.Y() <= 0
-		} else {
-			return math.Abs(ymaxproj-h.Projection.Y()) <= h.ProjectionRadius
-		}
-	}
-
-	unidrawer := uni.NewDrawer(img, wv, shading)
+	grassTracers := make([]Tracer, 0)
 
 	if grass {
-		unidrawer.OnAfterDrawThing = func(t Thing, d *Drawer) {
-			i, ok := shins[t]
-			if ok {
-				shin := t.(*Bone)
-				hoof := uni.Legs[i].Hoof
-				if !isGroundHoof(hoof, shin) {
-					return
-				}
-				_, grassdata.MinBottomY = wv.Shifted(0, hoof.Projection.Y()+hoof.ProjectionRadius)
-				grassdata.ConstrainBone = shin
-				DrawGrass(img, grassdata, wv)
+		shins := make(map[Thing]int)
+		ymax := -99999.0
+		ymax2 := -99999.0
+		ymaxproj := -99999.0
+		for i, l := range uni.Legs {
+			shins[l.Shin] = i
+			if l.Hoof.Center.Y() > ymax {
+				ymax2 = ymax
+				ymax = l.Hoof.Center.Y()
+			} else if l.Hoof.Center.Y() > ymax2 {
+				ymax2 = l.Hoof.Center.Y()
+			}
+			ymaxproj = math.Max(ymaxproj, l.Hoof.Projection.Y())
+		}
+		_, shiftedY := wv.Shifted(0, ymaxproj)
+		hoofHorizonDist := (shiftedY/fsize - bgdata.Horizon) / (1 - bgdata.Horizon) // 0 = bottom foot at horizon
+		if hoofHorizonDist < 0.5 {
+			gf := 1 + (1-hoofHorizonDist/0.5)*2
+			grassdata.BladeHeightFar *= gf
+			grassdata.BladeHeightNear *= gf
+		}
+
+		isGroundHoof := func(h *Ball, s *Bone) bool {
+			r := s.Bounding()
+			if r.Dx()*2 > r.Dy()*3 {
+				return false
+			}
+			if xAngle >= -3*DEGREE {
+				yground := math.Min(ymax-h.Radius, ymax2)
+				return yground-h.Center.Y() <= 0
+			} else {
+				return math.Abs(ymaxproj-h.Projection.Y()) <= h.ProjectionRadius
 			}
 		}
+
+		groundHoofs := make([]Leg, 0)
+		for _, l := range uni.Legs {
+			hoof := l.Hoof
+			if !isGroundHoof(hoof, l.Shin) {
+				continue
+			}
+			var i int
+			for i = 0; i < len(groundHoofs) && groundHoofs[i].Hoof.Projection.Z() < hoof.Projection.Z(); i++ {
+			}
+			head := append(groundHoofs[:i], l)
+			groundHoofs = append(head, groundHoofs[i:]...)
+		}
+		for _, l := range groundHoofs {
+			h := l.Hoof
+			gimg := image.NewRGBA(image.Rect(0, 0, size, size))
+			_, shiftedY := ShiftedProjection(wv, h.Projection)
+			grassdata.MinBottomY = shiftedY + h.ProjectionRadius
+			DrawGrass(gimg, grassdata, wv)
+			dx, dy := wv.Shifted(0, 0)
+			r := l.Shin.Bounding()
+			z := math.Min(h.Projection.Z()-h.ProjectionRadius-1, l.Knee.Projection.Z())
+			tr := &ImageTracer{gimg, image.Rect(int(dx+float64(r.Min.X)), int(dy+float64(r.Min.Y)), int(dx+float64(r.Max.X+1)), int(dy+float64(r.Max.Y+1))), z}
+			grassTracers = append(grassTracers, tr)
+		}
+		grassdata.MinBottomY = 0
 		DrawGrass(img, grassdata, wv)
 	}
 
-	unidrawer.Draw()
-
+	uni.Draw(img, wv, shading, yCallback, grassTracers...)
 	return nil, img
 }

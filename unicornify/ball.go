@@ -23,15 +23,12 @@ func NewBallP(center Point3d, r float64, c Color) *Ball {
 	}
 }
 
-func (b Ball) Draw(img *image.RGBA, wv WorldView, shading bool) {
-	sh := 0.25
-	if !shading {
-		sh = 0
-	}
-	x, y := ShiftedProjection(wv, b.Projection)
-	CircleF(img, x, y, b.ProjectionRadius, b.Color, DefaultGradientWithShading(sh))
+func (b *Ball) GetTracer(img *image.RGBA, wv WorldView, shading bool) Tracer {
+	b2 := *b
+	b2.Projection[0] += 2 * b.ProjectionRadius
+	result := NewBone(b, b).GetTracer(img, wv, shading)
+	return result
 }
-
 func (b *Ball) Project(wv WorldView) {
 	wv.ProjectBall(b)
 }
@@ -57,8 +54,4 @@ func (b Ball) Bounding() image.Rectangle {
 	x, y, _ := b.Projection.Decompose()
 	r := b.ProjectionRadius
 	return image.Rect(int(x-r), int(y-r), int(x+r+2), int(y+r+1))
-}
-
-func (b *Ball) Sort(wv WorldView) {
-	return
 }

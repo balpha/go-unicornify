@@ -92,7 +92,7 @@ func (wv PerspectiveWorldView) ProjectBall(b *Ball) {
 
 	f := wv.PerspectiveScale(pz)
 
-	b.Projection = Point3d{px * f, py * f, pz}
+	b.Projection = Point3d{px * f, py * f, pz * wv.Scale}
 
 	pzr := pz - b.Radius
 
@@ -105,5 +105,4 @@ func (wv PerspectiveWorldView) PerspectiveScale(projectedZ float64) float64 {
 	} else {
 		return (-projectedZ/wv.FocalLength + 1) * wv.Scale
 	}
-
 }

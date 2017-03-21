@@ -22,9 +22,9 @@ type UnicornData struct {
 	HornLength         float64
 	HornAngle          float64 // 0 means straight in x-direction, >0 means upwards
 	EyeSize            float64
-	IrisSize           float64
-	IrisHue            int
-	IrisSat            int
+	IrisSize           float64 // no longer used
+	IrisHue            int     // no longer used
+	IrisSat            int     // no longer used
 	PupilSize          float64
 	HairHue            int
 	HairSat            int

@@ -15,7 +15,6 @@ type GrassData struct {
 	Wind                            float64
 	Color1, Color2                  Color
 	MinBottomY                      float64 // pixel
-	ConstrainBone                   *Bone   // pixel
 }
 
 func (d *GrassData) Randomize(rand *pyrand.Random) {
@@ -34,16 +33,6 @@ type BladeData struct {
 
 func DrawGrass(img *image.RGBA, d GrassData, wv WorldView) {
 	bd := BladeData{}
-	if d.ConstrainBone != nil {
-		mask := image.NewRGBA(img.Bounds())
-		cx1, cy1 := ShiftedProjection(wv, d.ConstrainBone.Balls[0].Projection)
-		r1 := d.ConstrainBone.Balls[0].ProjectionRadius
-		cx2, cy2 := ShiftedProjection(wv, d.ConstrainBone.Balls[1].Projection)
-		r2 := d.ConstrainBone.Balls[1].ProjectionRadius
-		white := Color{255, 255, 255}
-		ConnectCirclesF(mask, cx1, cy1, r1, white, cx2, cy2, r2, white, DefaultGradientWithShading(0))
-		bd.ConstrainImage = mask
-	}
 	fsize := float64(img.Bounds().Dy())
 	for row := uint32(0); bd.BottomY-bd.Height <= fsize; row++ {
 		seed := d.Seed + row*d.RowSeedAdd

@@ -1,5 +1,6 @@
 package unicornify
 
+/*
 type Bird struct {
 	Figure
 }
@@ -54,3 +55,4 @@ func NewBird(data BirdData) *Bird {
 
 	return b
 }
+*/
