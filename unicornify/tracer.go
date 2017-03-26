@@ -55,9 +55,28 @@ func (first TraceIntervals) Intersect(second TraceIntervals) TraceIntervals {
 		if !intersection.IsEmpty() {
 			result = append(result, intersection)
 		}
-		if i1+1 < len(first) && first[i1+1].Start.Z <= second[i2+1].Start.Z {
+		if i1+1 < len(first) && i2+1 < len(second) && first[i1+1].Start.Z <= second[i2+1].Start.Z {
 			i1++
 		} else {
+			i2++
+		}
+	}
+	return result
+}
+
+func (first TraceIntervals) Union(second TraceIntervals) TraceIntervals {
+	first = first.Intersect(second.Invert())
+	i1 := 0
+	i2 := 0
+	result := TraceIntervals{}
+	for i1 < len(first) || i2 < len(second) {
+		if i2 == len(second) || (i1 < len(first) && first[i1].Start.Z <= second[i2].Start.Z) {
+			result = append(result, first[i1])
+			i1++
+			continue
+		}
+		if i1 == len(first) || (i2 < len(second) && second[i2].Start.Z < first[i1].Start.Z) {
+			result = append(result, second[i2])
 			i2++
 		}
 	}
@@ -196,7 +215,22 @@ func (gt *GroupTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
 }
 
 func (t *GroupTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
-	return DeepifyTrace(t, x, y)
+	result := TraceIntervals{}
+	any := false
+	xi := int(x)
+	yi := int(y)
+	for _, t := range t.tracers {
+		tr := t.GetBounds()
+		if xi < tr.Min.X || xi >= tr.Max.X+1 || yi < tr.Min.Y || yi >= tr.Max.Y+1 {
+			continue
+		}
+		ok, is := t.TraceDeep(x, y)
+		if ok {
+			any = true
+			result = result.Union(is)
+		}
+	}
+	return any, result
 }
 
 func (gt *GroupTracer) GetBounds() image.Rectangle {
