@@ -44,19 +44,19 @@ func NewUnicorn(data UnicornData) *Unicorn {
 	u.TailEnd = NewBallP(u.TailStart.Center.Shifted(Point3d{10, 0, 0}), data.TailEndSize, data.Color("Hair", 60))
 	u.TailEnd.SetDistance(data.TailLength, *u.TailStart)
 	u.TailEnd.RotateAround(*u.TailStart, data.TailAngle, 2)
-	u.Tail = NewNonLinBone(u.TailStart, u.TailEnd, nil, gammaFunc(data.TailGamma))
+	u.Tail = NewNonLinBone(u.TailStart, u.TailEnd, nil, gammaFuncTimes(data.TailGamma, 0.3))
 
-	square := gammaFunc(2)
+	eyecurve := gammaFunc(1.5)
 
 	u.Add(
 		NewBone(u.Snout, u.Head),
 		NewBone(u.HornOnset, u.HornTip),
 		u.EyeLeft, u.EyeRight,
 		u.PupilLeft, u.PupilRight,
-		NewNonLinBone(u.BrowLeftInner, u.BrowLeftMiddle, square, nil),
-		NewNonLinBone(u.BrowLeftMiddle, u.BrowLeftOuter, math.Sqrt, nil),
-		NewNonLinBone(u.BrowRightInner, u.BrowRightMiddle, square, nil),
-		NewNonLinBone(u.BrowRightMiddle, u.BrowRightOuter, math.Sqrt, nil),
+		NewNonLinBone(u.BrowLeftInner, u.BrowLeftMiddle, nil, eyecurve),
+		NewNonLinBone(u.BrowLeftMiddle, u.BrowLeftOuter, nil, eyecurve),
+		NewNonLinBone(u.BrowRightInner, u.BrowRightMiddle, nil, eyecurve),
+		NewNonLinBone(u.BrowRightMiddle, u.BrowRightOuter, nil, eyecurve),
 	)
 
 	for b := range u.BallSet() {
@@ -127,14 +127,18 @@ func (u *Unicorn) makeMane(data UnicornData) {
 		}
 		hairEnd := NewBallP(endPoint, 2, data.Color("Hair", data.HairTipLightnesses[i]))
 		hairEnd.RotateAround(*hairStart, -data.HairAngles[i], 2)
-		hair := NewNonLinBone(hairStart, hairEnd, nil, gammaFunc(data.HairGammas[i]))
+		hair := NewNonLinBone(hairStart, hairEnd, gammaFuncTimes(data.HairGammas[i], 0.2), gammaFuncTimes(1/data.HairGammas[i], 0.2))
 		u.Hairs.Add(hair)
 	}
 }
 
 func gammaFunc(gamma float64) func(float64) float64 {
+	return gammaFuncTimes(gamma, 1)
+}
+
+func gammaFuncTimes(gamma, t float64) func(float64) float64 {
 	return func(x float64) float64 {
-		return math.Pow(x, gamma)
+		return t*math.Pow(x, gamma) + (1-t)*x
 	}
 }
 

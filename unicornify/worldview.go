@@ -14,11 +14,10 @@ type PerspectiveWorldView struct {
 	FocalLength    float64
 }
 
-func (wv PerspectiveWorldView) ProjectBall(b *Ball) {
-	cam2c := b.Center.Minus(wv.CameraPosition)
-	view := wv.LookAtPoint.Shifted(wv.CameraPosition.Neg())
-	n := view.Times(1.0 / view.Length())
-	n1, n2, n3 := n.Decompose()
+// Given a vector v, returns the two vectors that form a right-hand rule system
+// (u1, u2, v) such that u2 points upward. If v is a unit vector, then so are u1 and u2.
+func CrossAxes(v Point3d) (u1, u2 Point3d) {
+	n1, n2, n3 := v.Decompose()
 
 	var x1, x3 float64
 
@@ -49,18 +48,29 @@ func (wv PerspectiveWorldView) ProjectBall(b *Ball) {
 
 	uy := Point3d{y1, y2, y3}
 
+	return ux, uy
+}
+
+func (wv PerspectiveWorldView) ProjectBall(b *Ball) {
+	cam2c := b.Center.Minus(wv.CameraPosition)
+	view := wv.LookAtPoint.Shifted(wv.CameraPosition.Neg())
+	n := view.Times(1.0 / view.Length())
+
+	ux, uy := CrossAxes(n)
+
 	ok, intf := IntersectionOfPlaneAndLine(wv.CameraPosition.Shifted(n.Times(wv.FocalLength)), ux, uy, wv.CameraPosition, cam2c)
 	if !ok { //FIXME
 		b.Projection = BallProjection{}
 		b.Projection.Radius = b.Radius
 	} else {
-		
+
 		b.Projection = BallProjection{
 			ProjectedCenterOS: wv.CameraPosition.Shifted(cam2c.Times(intf[2])),
 			ProjectedCenterCS: Point3d{intf[0], intf[1], wv.FocalLength},
+			WorldView:         wv,
 		}
 		b.Projection.CenterCS = b.Projection.ProjectedCenterCS.Times(cam2c.Length() / b.Projection.ProjectedCenterCS.Length())
-		
+
 		count := 0.0
 		max := 0.0
 		for dx := -1.0; dx <= 1; dx += 1 {

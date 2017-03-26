@@ -5,10 +5,10 @@ import (
 )
 
 type Ball struct {
-	Center           Point3d
-	Radius           float64
-	Color            Color
-	Projection       BallProjection
+	Center     Point3d
+	Radius     float64
+	Color      Color
+	Projection BallProjection
 }
 
 func NewBall(x, y, z, r float64, c Color) *Ball {
@@ -72,10 +72,11 @@ func (b Ball) Bounding() image.Rectangle {
 }
 
 type BallProjection struct {
-	CenterCS Point3d // the center in camera space (camera at (0,0,0), Z axis in view direction)
+	CenterCS          Point3d // the center in camera space (camera at (0,0,0), Z axis in view direction)
 	ProjectedCenterCS Point3d // the projection in camera space (note that by definition, Z will always be = focal length)
 	ProjectedCenterOS Point3d // the projection in original space
-	Radius float64
+	Radius            float64
+	WorldView         WorldView
 }
 
 func (bp BallProjection) X() float64 {
@@ -89,4 +90,3 @@ func (bp BallProjection) Y() float64 {
 func (bp BallProjection) Z() float64 {
 	return bp.CenterCS.Length()
 }
-
