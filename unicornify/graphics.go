@@ -121,7 +121,27 @@ func between(v, min, max int) int {
 	return v
 }
 func round(v float64) int {
-	return int(v + .5)
+	if v >= 0 {
+		return int(v + .5)
+	}
+	return int(v - .5)
+}
+func roundUp(v float64) int {
+	i, f := math.Modf(v)
+	if f > 0 {
+		return int(i) + 1
+	}
+	return int(i) // note that this is also correct for f < 0
+}
+func roundDown(v float64) int {
+	i, f := math.Modf(v)
+	if f < 0 {
+		return int(i) - 1
+	}
+	return int(i)
+}
+func rectFromFloats(minx, miny, maxx, maxy float64) image.Rectangle {
+	return image.Rect(roundDown(minx), roundDown(miny), roundUp(maxx), roundUp(maxy))
 }
 
 func sqr(x float64) float64 {
@@ -138,12 +158,12 @@ func (t *ConnectedSpheresTracer) GetBounds() image.Rectangle {
 	return image.Rect(t.xmin, t.ymin, t.xmax, t.ymax)
 }
 
-func (t *ConnectedSpheresTracer) Trace(x, y int) (bool, float64, Point3d, Color) {
+func (t *ConnectedSpheresTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
 	return t.traceImpl(x, y, false)
 }
-func (t *ConnectedSpheresTracer) traceImpl(x, y int, backside bool) (bool, float64, Point3d, Color) {
-	p1 := float64(x)
-	p2 := float64(y)
+func (t *ConnectedSpheresTracer) traceImpl(x, y float64, backside bool) (bool, float64, Point3d, Color) {
+	p1 := x
+	p2 := y
 
 	s1 := p1 - t.a1
 	s2 := p2 - t.a2
@@ -180,7 +200,6 @@ func (t *ConnectedSpheresTracer) traceImpl(x, y int, backside bool) (bool, float
 		} else {
 			s3 = -ps/2 - math.Sqrt(disc)
 		}
-		
 
 		kf := c1
 		mf := -2*s3*t.v3 + c2
@@ -217,7 +236,7 @@ func (t *ConnectedSpheresTracer) traceImpl(x, y int, backside bool) (bool, float
 		} else {
 			p3 = -pm/2 - math.Sqrt(discm)
 		}
-		
+
 	} else {
 		p3 = s3 + t.a3
 	}
@@ -229,7 +248,7 @@ func (t *ConnectedSpheresTracer) traceImpl(x, y int, backside bool) (bool, float
 	return true, p3, Point3d{d1, d2, d3}, MixColors(t.col1, t.col2, math.Max(0, math.Min(1, f)))
 }
 
-func (t *ConnectedSpheresTracer) TraceDeep(x, y int) (bool, TraceIntervals) {
+func (t *ConnectedSpheresTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 	ok1, z1, dir1, col1 := t.traceImpl(x, y, false)
 	ok2, z2, dir2, col2 := t.traceImpl(x, y, true)
 	if ok1 {
@@ -238,23 +257,22 @@ func (t *ConnectedSpheresTracer) TraceDeep(x, y int) (bool, TraceIntervals) {
 		}
 		return true, TraceIntervals{
 			TraceInterval{
-				Start: TraceResult{z1,dir1,col1},
-				End: TraceResult{z2,dir2,col2},
+				Start: TraceResult{z1, dir1, col1},
+				End:   TraceResult{z2, dir2, col2},
 			},
 		}
 	}
 	return false, TraceIntervals{}
 }
 
-func NewConnectedSpheresTracer(img *image.RGBA, wv WorldView, cx1, cy1, cz1, r1 float64, col1 Color, cx2, cy2, cz2, r2 float64, col2 Color) *ConnectedSpheresTracer {
+func NewConnectedSpheresTracer(wv WorldView, cx1, cy1, cz1, r1 float64, col1 Color, cx2, cy2, cz2, r2 float64, col2 Color) *ConnectedSpheresTracer {
 
 	t := &ConnectedSpheresTracer{}
 
-	size := img.Bounds().Dx()
-	t.xmin = between(round(cx1-r1), 0, round(cx2-r2))
-	t.xmax = between(round(cx1+r1), round(cx2+r2), size)
-	t.ymin = between(round(cy1-r1), 0, round(cy2-r2))
-	t.ymax = between(round(cy1+r1), round(cy2+r2), size)
+	t.xmin = roundDown(math.Min(cx1-r1, cx2-r2))
+	t.xmax = roundUp(math.Max(cx1+r1, cx2+r2))
+	t.ymin = roundDown(math.Min(cy1-r1, cy2-r2))
+	t.ymax = roundUp(math.Max(cy1+r1, cy2+r2))
 
 	t.v1 = float64(cx2 - cx1)
 	t.v2 = float64(cy2 - cy1)

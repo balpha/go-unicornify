@@ -23,10 +23,10 @@ func NewBallP(center Point3d, r float64, c Color) *Ball {
 	}
 }
 
-func (b *Ball) GetTracer(img *image.RGBA, wv WorldView) Tracer {
+func (b *Ball) GetTracer(wv WorldView) Tracer {
 	b2 := *b
 	b2.Projection[0] += 2 * b.ProjectionRadius
-	result := NewBone(b, b).GetTracer(img, wv)
+	result := NewBone(b, b).GetTracer(wv)
 	return result
 }
 func (b *Ball) Project(wv WorldView) {

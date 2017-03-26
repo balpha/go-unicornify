@@ -39,7 +39,7 @@ func (b *Bone) Project(wv WorldView) {
 	b.Balls[1].Project(wv)
 }
 
-func (b *Bone) GetTracer(img *image.RGBA, wv WorldView) Tracer {
+func (b *Bone) GetTracer(wv WorldView) Tracer {
 	b1 := b.Balls[0]
 	b2 := b.Balls[1]
 
@@ -58,11 +58,12 @@ func (b *Bone) GetTracer(img *image.RGBA, wv WorldView) Tracer {
 		if bounding.Dx() > bounding.Dy() {
 			parts = bounding.Dx()
 		}
+		parts = roundUp(float64(parts) * SCALE)
 
 		var prevX, prevY, prevR, prevZ, prevFx, prevFy float64
 		var prevCol Color
 
-		prevX, prevY = ShiftedProjection(wv, p1)
+		prevX, prevY = p1.X(), p1.Y()
 		prevR = r1
 		prevCol = c1
 		prevZ = p1.Z()
@@ -86,11 +87,9 @@ func (b *Bone) GetTracer(img *image.RGBA, wv WorldView) Tracer {
 			x := MixFloats(p1.X(), p2.X(), fx)
 			y := MixFloats(p1.Y(), p2.Y(), fy)
 
-			x, y = wv.Shifted(x, y)
-
 			z := MixFloats(p1.Z(), p2.Z(), factor)
 			r := MixFloats(r1, r2, factor)
-			tracer := NewConnectedSpheresTracer(img, wv, prevX, prevY, prevZ, prevR, prevCol, x, y, z, r, col /*, cp*/)
+			tracer := NewConnectedSpheresTracer(wv, prevX, prevY, prevZ, prevR, prevCol, x, y, z, r, col /*, cp*/)
 			subgroup.Add(tracer)
 
 			if i%5 == 0 || i == parts {
@@ -104,9 +103,7 @@ func (b *Bone) GetTracer(img *image.RGBA, wv WorldView) Tracer {
 		return result
 
 	} else {
-		fx1, fy1 := ShiftedProjection(wv, p1)
-		fx2, fy2 := ShiftedProjection(wv, p2)
-		tracer := NewConnectedSpheresTracer(img, wv, fx1, fy1, p1.Z(), r1, c1, fx2, fy2, p2.Z(), r2, c2 /*, cp*/)
+		tracer := NewConnectedSpheresTracer(wv, p1.X(), p1.Y(), p1.Z(), r1, c1, p2.X(), p2.Y(), p2.Z(), r2, c2 /*, cp*/)
 		return tracer
 	}
 	return nil

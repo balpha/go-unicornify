@@ -6,18 +6,11 @@ import (
 
 type WorldView interface {
 	ProjectBall(*Ball)
-	Shifted(x, y float64) (float64, float64)
-}
-
-func ShiftedProjection(wv WorldView, p Point3d) (float64, float64) {
-	return wv.Shifted(p.X(), p.Y())
 }
 
 type ParallelWorldView struct {
 	AngleX, AngleY float64
 	RotationCenter Point3d
-	Shift          Point2d
-	Scale          float64
 }
 
 func (wv ParallelWorldView) ProjectBall(b *Ball) {
@@ -31,24 +24,14 @@ func (wv ParallelWorldView) ProjectBall(b *Ball) {
 	y3 := y2*math.Cos(wv.AngleX) - z2*math.Sin(wv.AngleX)
 	z3 := y2*math.Sin(wv.AngleX) + z2*math.Cos(wv.AngleX)
 
-	b.Projection = Point3d{x3, y3, z3}.Times(wv.Scale).Shifted(wv.RotationCenter)
-	b.ProjectionRadius = b.Radius * wv.Scale
-}
-
-func (wv ParallelWorldView) Shifted(x, y float64) (float64, float64) {
-	return x + wv.Shift[0], y + wv.Shift[1]
+	b.Projection = Point3d{x3, y3, z3}.Shifted(wv.RotationCenter)
+	b.ProjectionRadius = b.Radius
 }
 
 type PerspectiveWorldView struct {
 	CameraPosition Point3d
 	LookAtPoint    Point3d
-	Shift          Point2d
-	Scale          float64
 	FocalLength    float64
-}
-
-func (wv PerspectiveWorldView) Shifted(x, y float64) (float64, float64) {
-	return x + wv.Shift[0], y + wv.Shift[1]
 }
 
 func (wv PerspectiveWorldView) ProjectBall(b *Ball) {
@@ -91,7 +74,7 @@ func (wv PerspectiveWorldView) ProjectBall(b *Ball) {
 		b.Projection = Point3d{}
 		b.ProjectionRadius = b.Radius
 	} else {
-		b.Projection = Point3d{intf[0], intf[1], cam2c.Length()}.Times(wv.Scale)
+		b.Projection = Point3d{intf[0], intf[1], cam2c.Length()}
 		count := 0.0
 		max := 0.0
 		for dx := -1.0; dx <= 1; dx += 1 {
@@ -105,7 +88,7 @@ func (wv PerspectiveWorldView) ProjectBall(b *Ball) {
 					ok, intf := IntersectionOfPlaneAndLine(wv.CameraPosition.Shifted(n.Times(wv.FocalLength)), ux, uy, wv.CameraPosition, b.Center.Shifted(shift).Minus(wv.CameraPosition))
 					if ok {
 						count++
-						rp := Point3d{intf[0], intf[1], 0}.Times(wv.Scale)
+						rp := Point3d{intf[0], intf[1], 0}
 						max = math.Max(max, math.Sqrt(sqr(rp[0]-b.Projection[0])+sqr(rp[1]-b.Projection[1])))
 					}
 				}

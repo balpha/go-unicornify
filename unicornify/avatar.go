@@ -6,6 +6,8 @@ import (
 	"math"
 )
 
+var SCALE float64 // FIXME temp for non-linear bones, figure out how to handle it correctly
+
 func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shading bool, grass bool, persp bool, parallelize bool, yCallback func(int)) (error, *image.RGBA) {
 
 	rand := pyrand.NewRandom()
@@ -70,6 +72,8 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 	factor := math.Sqrt((unicornScaleFactor - .5) / 2.5)
 
 	var wv WorldView
+	var Shift Point2d
+	var Scale float64
 
 	if persp {
 		lookAtPoint := uni.Shoulder.Center.Shifted(uni.Head.Center.Shifted(uni.Shoulder.Center.Neg()).Times(factor))
@@ -77,18 +81,18 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 		wv = PerspectiveWorldView{
 			CameraPosition: cp,
 			LookAtPoint:    lookAtPoint,
-			Shift:          Point2d{0.5 * fsize, factor*fsize/3 + (1-factor)*fsize/2},
-			Scale:          ((unicornScaleFactor-0.5)/2.5*2 + 0.5) * fsize / 140.0,
 			FocalLength:    focalLength,
 		}
+		Shift = Point2d{0.5 * fsize, factor*fsize/3 + (1-factor)*fsize/2}
+		Scale = ((unicornScaleFactor-0.5)/2.5*2 + 0.5) * fsize / 140.0
 	} else {
 		wv = ParallelWorldView{
 			AngleX:         xAngle,
 			AngleY:         yAngle,
-			Shift:          Point2d{100, 100},
 			RotationCenter: Point3d{150, 0, 0},
-			Scale:          unicornScaleFactor * fsize / 400.0,
 		}
+		Shift = Point2d{100, 100}
+		Scale = unicornScaleFactor * fsize / 400.0
 	}
 
 	uni.Project(wv)
@@ -109,11 +113,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 			0,
 		}
 
-		parwv := wv.(ParallelWorldView)
-
-		// shift can be changed without reprojecting
-		parwv.Shift = shoulderShift.Shifted(headShift.Shifted(shoulderShift.Neg()).Times(factor)).DiscardZ()
-		wv = parwv
+		Shift = shoulderShift.Shifted(headShift.Shifted(shoulderShift.Neg()).Times(factor)).DiscardZ()
 	}
 	img := image.NewRGBA(image.Rect(0, 0, size, size))
 	if withBackground {
@@ -121,6 +121,11 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 	}
 
 	grassTracers := make([]Tracer, 0)
+
+	scaleAndShift := func(t Tracer) Tracer {
+		t = NewScalingTracer(t, Scale)
+		return NewTranslatingTracer(t, Shift[0], Shift[1])
+	}
 
 	if grass {
 		shins := make(map[Thing]int)
@@ -137,7 +142,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 			}
 			ymaxproj = math.Max(ymaxproj, l.Hoof.Projection.Y())
 		}
-		_, shiftedY := wv.Shifted(0, ymaxproj)
+		shiftedY := ymaxproj*Scale + Shift[1]
 		hoofHorizonDist := (shiftedY/fsize - bgdata.Horizon) / (1 - bgdata.Horizon) // 0 = bottom foot at horizon
 		if hoofHorizonDist < 0.5 {
 			gf := 1 + (1-hoofHorizonDist/0.5)*2
@@ -173,26 +178,45 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 		for _, l := range groundHoofs {
 			h := l.Hoof
 			gimg := image.NewRGBA(image.Rect(0, 0, size, size))
-			_, shiftedY := ShiftedProjection(wv, h.Projection)
-			grassdata.MinBottomY = shiftedY + h.ProjectionRadius
+			shiftedY := h.Projection.Y()*Scale + Shift[1]
+			grassdata.MinBottomY = shiftedY + h.ProjectionRadius*Scale
 			DrawGrass(gimg, grassdata, wv)
-			dx, dy := wv.Shifted(0, 0)
-			r := l.Shin.Bounding()
-			z := math.Min(h.Projection.Z()-h.ProjectionRadius-1, l.Knee.Projection.Z())
-			tr := &ImageTracer{gimg, image.Rect(int(dx+float64(r.Min.X)), int(dy+float64(r.Min.Y)), int(dx+float64(r.Max.X+1)), int(dy+float64(r.Max.Y+1))), z}
+			shinTracer := scaleAndShift(l.Shin.GetTracer(wv))
+			z := func(x, y float64) (bool, float64) {
+				ok, z, _, _ := shinTracer.Trace(x, y)
+				return ok, z - 1
+			}
+			tr := &ImageTracer{gimg, shinTracer.GetBounds(), z}
 			grassTracers = append(grassTracers, tr)
 		}
 		grassdata.MinBottomY = 0
 		DrawGrass(img, grassdata, wv)
-
 	}
 
-	var lightingWrapper WrappingTracer = nil
+	SCALE = Scale
+
+	tracer := uni.GetTracer(wv)
+
 	if shading {
-		lightingWrapper = NewDirectionalLightTracer(lightDirection)
+		lt := NewDirectionalLightTracer(lightDirection)
+		lt.Add(tracer)
+		tracer = lt
 	}
 
-	uni.Draw(img, wv, lightingWrapper, parallelize, yCallback, grassTracers...)
+	tracer = scaleAndShift(tracer)
+
+	if grass {
+		gt := NewGroupTracer()
+		gt.Add(tracer)
+		gt.Add(grassTracers...)
+		tracer = gt
+	}
+
+	if parallelize {
+		DrawTracerParallel(tracer, img, yCallback, 8)
+	} else {
+		DrawTracer(tracer, img, yCallback)
+	}
 
 	return nil, img
 }

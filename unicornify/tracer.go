@@ -4,18 +4,18 @@ import (
 	"image"
 	"image/color"
 	"math"
-	"fmt"
 )
 
 type TraceResult struct {
-	Z float64
+	Z         float64
 	Direction Point3d
-	Color Color
+	Color     Color
 }
 
 type TraceInterval struct {
 	Start, End TraceResult
 }
+
 var EmptyInterval = TraceInterval{TraceResult{0, NoDirection, Color{}}, TraceResult{0, NoDirection, Color{}}}
 
 func (first TraceInterval) Intersect(second TraceInterval) TraceInterval {
@@ -30,20 +30,20 @@ func (first TraceInterval) Intersect(second TraceInterval) TraceInterval {
 	} else {
 		right = first.End
 	}
-	
+
 	if right.Z <= left.Z {
 		return EmptyInterval
 	}
-	
+
 	return TraceInterval{left, right}
 }
 
 func (i TraceInterval) IsEmpty() bool {
-	return i.Start.Z>=i.End.Z
+	return i.Start.Z >= i.End.Z
 }
 
-
 type TraceIntervals []TraceInterval
+
 var EmptyIntervals = TraceIntervals{}
 
 func (first TraceIntervals) Intersect(second TraceIntervals) TraceIntervals {
@@ -67,11 +67,11 @@ func (first TraceIntervals) Intersect(second TraceIntervals) TraceIntervals {
 func (is TraceIntervals) Invert() TraceIntervals {
 	//TODO: handle inf start&end
 	result := TraceIntervals{}
-	if len(is)==0 {
+	if len(is) == 0 {
 		return TraceIntervals{
-			TraceInterval {
+			TraceInterval{
 				Start: TraceResult{math.Inf(-1), NoDirection, Color{}},
-				End: TraceResult{math.Inf(1), NoDirection, Color{}},
+				End:   TraceResult{math.Inf(1), NoDirection, Color{}},
 			},
 		}
 	}
@@ -79,33 +79,34 @@ func (is TraceIntervals) Invert() TraceIntervals {
 	for _, i := range is {
 		n := TraceInterval{
 			Start: prev,
-			End: TraceResult{i.Start.Z, i.Start.Direction.Neg(), i.Start.Color},
+			End:   TraceResult{i.Start.Z, i.Start.Direction.Neg(), i.Start.Color},
 		}
 		result = append(result, n)
 		prev = TraceResult{i.End.Z, i.End.Direction.Neg(), i.End.Color}
 	}
-	result = append(result, TraceInterval {
+	result = append(result, TraceInterval{
 		Start: prev,
-		End: TraceResult{math.Inf(1), prev.Direction.Neg(), prev.Color},
+		End:   TraceResult{math.Inf(1), prev.Direction.Neg(), prev.Color},
 	})
 	return result
 }
+
 type Tracer interface {
-	Trace(x, y int) (bool, float64, Point3d, Color)
-	TraceDeep(x, y int) (bool, TraceIntervals)
+	Trace(x, y float64) (bool, float64, Point3d, Color)
+	TraceDeep(x, y float64) (bool, TraceIntervals)
 	GetBounds() image.Rectangle
 }
 
-func DeepifyTrace(t Tracer, x, y int) (bool, TraceIntervals) {
+func DeepifyTrace(t Tracer, x, y float64) (bool, TraceIntervals) {
 	ok, z, dir, col := t.Trace(x, y)
 	inter := TraceIntervals{TraceInterval{
 		Start: TraceResult{z, dir, col},
-		End: TraceResult{math.Inf(1), dir, col},
+		End:   TraceResult{math.Inf(1), dir, col},
 	}}
 	return ok, inter
 }
 
-func UnDeepifyTrace(t Tracer, x, y int) (bool, float64, Point3d, Color) {
+func UnDeepifyTrace(t Tracer, x, y float64) (bool, float64, Point3d, Color) {
 	ok, r := t.TraceDeep(x, y)
 	if ok {
 		first := r[0].Start
@@ -123,7 +124,7 @@ func DrawTracerPartial(t Tracer, img *image.RGBA, yCallback func(int), bounds im
 	r := bounds.Intersect(t.GetBounds())
 	for y := r.Min.Y; y <= r.Max.Y; y++ {
 		for x := r.Min.X; x <= r.Max.X; x++ {
-			any, _, _, col := t.Trace(x, y)
+			any, _, _, col := t.Trace(float64(x), float64(y))
 			if any {
 				img.Set(x, y, col)
 			}
@@ -169,14 +170,16 @@ func NewGroupTracer() *GroupTracer {
 	return &GroupTracer{}
 }
 
-func (gt *GroupTracer) Trace(x, y int) (bool, float64, Point3d, Color) {
+func (gt *GroupTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
 	any := false
 	var minz float64 = 0.0
 	var col Color = Black
 	var dir Point3d
+	xi := int(x)
+	yi := int(y)
 	for _, t := range gt.tracers {
 		tr := t.GetBounds()
-		if x < tr.Min.X || x > tr.Max.X || y < tr.Min.Y || y > tr.Max.Y {
+		if xi < tr.Min.X || xi >= tr.Max.X+1 || yi < tr.Min.Y || yi >= tr.Max.Y+1 {
 			continue
 		}
 		ok, z, thisdir, thiscol := t.Trace(x, y)
@@ -192,7 +195,7 @@ func (gt *GroupTracer) Trace(x, y int) (bool, float64, Point3d, Color) {
 	return any, minz, dir, col
 }
 
-func (t *GroupTracer) TraceDeep(x, y int) (bool, TraceIntervals) {
+func (t *GroupTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 	return DeepifyTrace(t, x, y)
 }
 
@@ -224,24 +227,28 @@ func (gt *GroupTracer) Add(ts ...Tracer) {
 type ImageTracer struct {
 	img    *image.RGBA
 	bounds image.Rectangle
-	z      float64
+	z      func(x, y float64) (bool, float64)
 }
 
 var NoDirection = Point3d{0, 0, 0}
 
-func (t *ImageTracer) Trace(x, y int) (bool, float64, Point3d, Color) {
+func (t *ImageTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
 	tr := t.bounds
-	if x < tr.Min.X || x > tr.Max.X || y < tr.Min.Y || y > tr.Max.Y {
+	xi := int(x)
+	yi := int(y)
+	if xi < tr.Min.X || xi >= tr.Max.X+1 || yi < tr.Min.Y || yi >= tr.Max.Y+1 {
 		return false, 0, NoDirection, Black
 	}
-	c := t.img.At(x, y).(color.RGBA)
+	c := t.img.At(xi, yi).(color.RGBA)
 	if c.A < 255 {
 		return false, 0, NoDirection, Black
 	}
-	return true, t.z, NoDirection, Color{c.R, c.G, c.B}
+	ok, z := t.z(x, y)
+
+	return ok, z, NoDirection, Color{c.R, c.G, c.B}
 }
 
-func (t *ImageTracer) TraceDeep(x, y int) (bool, TraceIntervals) {
+func (t *ImageTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 	return DeepifyTrace(t, x, y)
 }
 
@@ -256,7 +263,7 @@ type DirectionalLightTracer struct {
 	LightDirectionUnit Point3d
 }
 
-func (t *DirectionalLightTracer) Trace(x, y int) (bool, float64, Point3d, Color) {
+func (t *DirectionalLightTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
 	ok, z, dir, col := t.GroupTracer.Trace(x, y)
 	if !ok {
 		return ok, z, dir, col
@@ -278,7 +285,7 @@ func (t *DirectionalLightTracer) Trace(x, y int) (bool, float64, Point3d, Color)
 	return ok, z, dir, col
 }
 
-func (t *DirectionalLightTracer) TraceDeep(x, y int) (bool, TraceIntervals) {
+func (t *DirectionalLightTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 	return DeepifyTrace(t, x, y)
 }
 
@@ -307,7 +314,7 @@ type PointLightTracer struct {
 	HalfLifes      []float64
 }
 
-func (t *PointLightTracer) Trace(x, y int) (bool, float64, Point3d, Color) {
+func (t *PointLightTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
 	ok, z, dir, col := t.SourceTracer.Trace(x, y)
 	if !ok {
 		return ok, z, dir, col
@@ -350,7 +357,7 @@ func (t *PointLightTracer) Trace(x, y int) (bool, float64, Point3d, Color) {
 	return ok, z, dir, col
 }
 
-func (t *PointLightTracer) TraceDeep(x, y int) (bool, TraceIntervals) {
+func (t *PointLightTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 	return DeepifyTrace(t, x, y)
 }
 
@@ -369,7 +376,7 @@ type DifferenceTracer struct {
 	Base, Subtrahend Tracer
 }
 
-func (t *DifferenceTracer) TraceDeep(x, y int) (bool, TraceIntervals) {
+func (t *DifferenceTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 	ok1, i1 := t.Base.TraceDeep(x, y)
 	ok2, i2 := t.Subtrahend.TraceDeep(x, y)
 	if !ok1 {
@@ -379,21 +386,66 @@ func (t *DifferenceTracer) TraceDeep(x, y int) (bool, TraceIntervals) {
 		return ok1, i1
 	}
 	res := i1.Intersect(i2.Invert())
-	if x==675 &&y==496 {
-		fmt.Printf("\n   %v\n   &\n   %v\n   =\n   %v\n", i1, i2, res)
-	}
-	return len(res)>0, res
+	return len(res) > 0, res
 }
 
 func (t *DifferenceTracer) GetBounds() image.Rectangle {
 	return t.Base.GetBounds()
 }
 
-func (t *DifferenceTracer) Trace(x, y int) (bool, float64, Point3d, Color) {
+func (t *DifferenceTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
 	return UnDeepifyTrace(t, x, y)
 }
 
-func NewDifferenceTracer (base, subtrahend Tracer) *DifferenceTracer {
+func NewDifferenceTracer(base, subtrahend Tracer) *DifferenceTracer {
 	return &DifferenceTracer{base, subtrahend}
 }
 
+// ------- ScalingTracer -------
+
+type ScalingTracer struct {
+	Source Tracer
+	Scale  float64
+}
+
+func (t *ScalingTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
+	return t.Source.TraceDeep(x/t.Scale, y/t.Scale) // TODO: scale the result?
+}
+
+func (t *ScalingTracer) GetBounds() image.Rectangle {
+	b := t.Source.GetBounds()
+	s := t.Scale
+	return rectFromFloats(float64(b.Min.X)*s, float64(b.Min.Y)*s, float64(b.Max.X)*s, float64(b.Max.Y)*s)
+}
+
+func (t *ScalingTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
+	return t.Source.Trace(x/t.Scale, y/t.Scale) // TODO: scale the result?
+}
+
+func NewScalingTracer(source Tracer, scale float64) *ScalingTracer {
+	return &ScalingTracer{source, scale}
+}
+
+// ------- TranslatingTracer -------
+
+type TranslatingTracer struct {
+	Source         Tracer
+	ShiftX, ShiftY float64
+}
+
+func (t *TranslatingTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
+	return t.Source.TraceDeep(x-t.ShiftX, y-t.ShiftY)
+}
+
+func (t *TranslatingTracer) GetBounds() image.Rectangle {
+	b := t.Source.GetBounds()
+	return rectFromFloats(float64(b.Min.X)+t.ShiftX, float64(b.Min.Y)+t.ShiftY, float64(b.Max.X)+t.ShiftX, float64(b.Max.Y)+t.ShiftY)
+}
+
+func (t *TranslatingTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
+	return t.Source.Trace(x-t.ShiftX, y-t.ShiftY)
+}
+
+func NewTranslatingTracer(source Tracer, dx, dy float64) *TranslatingTracer {
+	return &TranslatingTracer{source, dx, dy}
+}

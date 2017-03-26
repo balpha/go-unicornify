@@ -33,7 +33,7 @@ func main() {
 	flag.BoolVar(&grass, "grass", false, "add grass to the ground")
 	flag.BoolVar(&persp, "persp", false, "use a perspective camera")
 	flag.BoolVar(&serial, "serial", false, "do not parallelize the drawing")
-	
+
 	flag.Parse()
 	inputs := 0
 	if mail != "" {
