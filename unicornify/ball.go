@@ -8,8 +8,7 @@ type Ball struct {
 	Center           Point3d
 	Radius           float64
 	Color            Color
-	Projection       Point3d
-	ProjectionRadius float64
+	Projection       BallProjection
 }
 
 func NewBall(x, y, z, r float64, c Color) *Ball {
@@ -24,8 +23,6 @@ func NewBallP(center Point3d, r float64, c Color) *Ball {
 }
 
 func (b *Ball) GetTracer(wv WorldView) Tracer {
-	b2 := *b
-	b2.Projection[0] += 2 * b.ProjectionRadius
 	result := NewBone(b, b).GetTracer(wv)
 	return result
 }
@@ -69,7 +66,27 @@ func (b *Ball) MoveToBone(bone Bone) {
 }
 
 func (b Ball) Bounding() image.Rectangle {
-	x, y, _ := b.Projection.Decompose()
-	r := b.ProjectionRadius
+	x, y := b.Projection.X(), b.Projection.Y()
+	r := b.Projection.Radius
 	return image.Rect(int(x-r), int(y-r), int(x+r+2), int(y+r+1))
 }
+
+type BallProjection struct {
+	CenterCS Point3d // the center in camera space (camera at (0,0,0), Z axis in view direction)
+	ProjectedCenterCS Point3d // the projection in camera space (note that by definition, Z will always be = focal length)
+	ProjectedCenterOS Point3d // the projection in original space
+	Radius float64
+}
+
+func (bp BallProjection) X() float64 {
+	return bp.ProjectedCenterCS.X()
+}
+
+func (bp BallProjection) Y() float64 {
+	return bp.ProjectedCenterCS.Y()
+}
+
+func (bp BallProjection) Z() float64 {
+	return bp.CenterCS.Length()
+}
+

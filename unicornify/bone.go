@@ -46,8 +46,8 @@ func (b *Bone) GetTracer(wv WorldView) Tracer {
 	p1 := b1.Projection
 	p2 := b2.Projection
 
-	r1 := b1.ProjectionRadius
-	r2 := b2.ProjectionRadius
+	r1 := b1.Projection.Radius
+	r2 := b2.Projection.Radius
 
 	c1 := b1.Color
 	c2 := b2.Color

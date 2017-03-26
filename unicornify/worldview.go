@@ -15,7 +15,7 @@ type PerspectiveWorldView struct {
 }
 
 func (wv PerspectiveWorldView) ProjectBall(b *Ball) {
-	cam2c := b.Center.Shifted(wv.CameraPosition.Neg())
+	cam2c := b.Center.Minus(wv.CameraPosition)
 	view := wv.LookAtPoint.Shifted(wv.CameraPosition.Neg())
 	n := view.Times(1.0 / view.Length())
 	n1, n2, n3 := n.Decompose()
@@ -49,12 +49,18 @@ func (wv PerspectiveWorldView) ProjectBall(b *Ball) {
 
 	uy := Point3d{y1, y2, y3}
 
-	ok, intf := IntersectionOfPlaneAndLine(wv.CameraPosition.Shifted(n.Times(wv.FocalLength)), ux, uy, wv.CameraPosition, b.Center.Minus(wv.CameraPosition))
+	ok, intf := IntersectionOfPlaneAndLine(wv.CameraPosition.Shifted(n.Times(wv.FocalLength)), ux, uy, wv.CameraPosition, cam2c)
 	if !ok { //FIXME
-		b.Projection = Point3d{}
-		b.ProjectionRadius = b.Radius
+		b.Projection = BallProjection{}
+		b.Projection.Radius = b.Radius
 	} else {
-		b.Projection = Point3d{intf[0], intf[1], cam2c.Length()}
+		
+		b.Projection = BallProjection{
+			ProjectedCenterOS: wv.CameraPosition.Shifted(cam2c.Times(intf[2])),
+			ProjectedCenterCS: Point3d{intf[0], intf[1], wv.FocalLength},
+		}
+		b.Projection.CenterCS = b.Projection.ProjectedCenterCS.Times(cam2c.Length() / b.Projection.ProjectedCenterCS.Length())
+		
 		count := 0.0
 		max := 0.0
 		for dx := -1.0; dx <= 1; dx += 1 {
@@ -69,14 +75,14 @@ func (wv PerspectiveWorldView) ProjectBall(b *Ball) {
 					if ok {
 						count++
 						rp := Point3d{intf[0], intf[1], 0}
-						max = math.Max(max, math.Sqrt(sqr(rp[0]-b.Projection[0])+sqr(rp[1]-b.Projection[1])))
+						max = math.Max(max, math.Sqrt(sqr(rp[0]-b.Projection.X())+sqr(rp[1]-b.Projection.Y())))
 					}
 				}
 			}
 
 		}
 
-		b.ProjectionRadius = max
+		b.Projection.Radius = max
 	}
 	return
 

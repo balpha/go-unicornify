@@ -127,7 +127,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 				yground := math.Min(ymax-h.Radius, ymax2)
 				return yground-h.Center.Y() <= 0
 			} else {
-				return math.Abs(ymaxproj-h.Projection.Y()) <= h.ProjectionRadius
+				return math.Abs(ymaxproj-h.Projection.Y()) <= h.Projection.Radius
 			}
 		}
 
@@ -147,7 +147,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 			h := l.Hoof
 			gimg := image.NewRGBA(image.Rect(0, 0, size, size))
 			shiftedY := h.Projection.Y()*Scale + Shift[1]
-			grassdata.MinBottomY = shiftedY + h.ProjectionRadius*Scale
+			grassdata.MinBottomY = shiftedY + h.Projection.Radius*Scale
 			DrawGrass(gimg, grassdata, wv)
 			shinTracer := scaleAndShift(l.Shin.GetTracer(wv))
 			z := func(x, y float64) (bool, float64) {
