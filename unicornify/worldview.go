@@ -8,26 +8,6 @@ type WorldView interface {
 	ProjectBall(*Ball)
 }
 
-type ParallelWorldView struct {
-	AngleX, AngleY float64
-	RotationCenter Point3d
-}
-
-func (wv ParallelWorldView) ProjectBall(b *Ball) {
-	x1, y1, z1 := b.Center.Shifted(wv.RotationCenter.Neg()).Decompose()
-
-	x2 := x1*math.Cos(wv.AngleY) - z1*math.Sin(wv.AngleY)
-	y2 := y1
-	z2 := x1*math.Sin(wv.AngleY) + z1*math.Cos(wv.AngleY)
-
-	x3 := x2
-	y3 := y2*math.Cos(wv.AngleX) - z2*math.Sin(wv.AngleX)
-	z3 := y2*math.Sin(wv.AngleX) + z2*math.Cos(wv.AngleX)
-
-	b.Projection = Point3d{x3, y3, z3}.Shifted(wv.RotationCenter)
-	b.ProjectionRadius = b.Radius
-}
-
 type PerspectiveWorldView struct {
 	CameraPosition Point3d
 	LookAtPoint    Point3d

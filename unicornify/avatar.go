@@ -8,7 +8,7 @@ import (
 
 var SCALE float64 // FIXME temp for non-linear bones, figure out how to handle it correctly
 
-func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shading bool, grass bool, persp bool, parallelize bool, yCallback func(int)) (error, *image.RGBA) {
+func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shading bool, grass bool, parallelize bool, yCallback func(int)) (error, *image.RGBA) {
 
 	rand := pyrand.NewRandom()
 	err := rand.SeedFromHexString(hash)
@@ -46,7 +46,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 	grassdata.BladeHeightNear = (0.02 + 0.02*rand.Random()) * grassScale
 	grassdata.BladeHeightFar = grassdata.BladeHeightNear / grassSlope
 
-	focalLength := 250 + rand.Random()*250 // only used for perspective camera
+	focalLength := 250 + rand.Random()*250
 
 	data.Randomize4(rand)
 
@@ -71,50 +71,18 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 	// center the shoulder at (1/2, 1/2)
 	factor := math.Sqrt((unicornScaleFactor - .5) / 2.5)
 
-	var wv WorldView
-	var Shift Point2d
-	var Scale float64
-
-	if persp {
-		lookAtPoint := uni.Shoulder.Center.Shifted(uni.Head.Center.Shifted(uni.Shoulder.Center.Neg()).Times(factor))
-		cp := lookAtPoint.Shifted(Point3d{0, 0, -3 * focalLength}).RotatedAround(uni.Head.Center, -xAngle, 0).RotatedAround(uni.Head.Center, -yAngle, 1)
-		wv = PerspectiveWorldView{
-			CameraPosition: cp,
-			LookAtPoint:    lookAtPoint,
-			FocalLength:    focalLength,
-		}
-		Shift = Point2d{0.5 * fsize, factor*fsize/3 + (1-factor)*fsize/2}
-		Scale = ((unicornScaleFactor-0.5)/2.5*2 + 0.5) * fsize / 140.0
-	} else {
-		wv = ParallelWorldView{
-			AngleX:         xAngle,
-			AngleY:         yAngle,
-			RotationCenter: Point3d{150, 0, 0},
-		}
-		Shift = Point2d{100, 100}
-		Scale = unicornScaleFactor * fsize / 400.0
+	lookAtPoint := uni.Shoulder.Center.Shifted(uni.Head.Center.Shifted(uni.Shoulder.Center.Neg()).Times(factor))
+	cp := lookAtPoint.Shifted(Point3d{0, 0, -3 * focalLength}).RotatedAround(uni.Head.Center, -xAngle, 0).RotatedAround(uni.Head.Center, -yAngle, 1)
+	wv := PerspectiveWorldView{
+		CameraPosition: cp,
+		LookAtPoint:    lookAtPoint,
+		FocalLength:    focalLength,
 	}
+	Shift := Point2d{0.5 * fsize, factor*fsize/3 + (1-factor)*fsize/2}
+	Scale := ((unicornScaleFactor-0.5)/2.5*2 + 0.5) * fsize / 140.0
 
 	uni.Project(wv)
 
-	if !persp {
-
-		headPos := uni.Head.Projection
-		shoulderPos := uni.Shoulder.Projection
-		// ignoring Z for the following two
-		headShift := Point3d{
-			fsize/2 - headPos.X(),
-			fsize/3 - headPos.Y(),
-			0,
-		}
-		shoulderShift := Point3d{
-			fsize/2 - shoulderPos.X(),
-			fsize/2 - shoulderPos.Y(),
-			0,
-		}
-
-		Shift = shoulderShift.Shifted(headShift.Shifted(shoulderShift.Neg()).Times(factor)).DiscardZ()
-	}
 	img := image.NewRGBA(image.Rect(0, 0, size, size))
 	if withBackground {
 		bgdata.Draw(img, shading)
