@@ -119,7 +119,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 		}
 
 		isGroundHoof := func(h *Ball, s *Bone) bool {
-			r := s.Bounding()
+			r := s.GetTracer(wv).GetBounds() // this doesn't take scaling and shifting into account, but that's fine since we're only interested in a rough  aspect ratio
 			if r.Dx()*2 > r.Dy()*3 {
 				return false
 			}

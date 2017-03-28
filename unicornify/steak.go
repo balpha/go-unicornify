@@ -15,9 +15,7 @@ func (s *Steak) Project(wv WorldView) {
 		b.Project(wv)
 	}
 }
-func (s *Steak) Bounding() image.Rectangle {
-	return s.GetTracer(s.Balls[0].Projection.WorldView).GetBounds()
-}
+
 func NewSteak(b1, b2, b3 *Ball) *Steak {
 	return &Steak{Balls:[3]*Ball{b1, b2, b3}}
 }
@@ -161,9 +159,10 @@ func (t *SteakTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
 }
 
 func (t *SteakTracer) GetBounds() image.Rectangle {
-	r := t.b1.Bounding().Union(t.b2.Bounding()).Union(t.b3.Bounding())
+	wv := t.b1.Projection.WorldView
+	r := t.b1.GetTracer(wv).GetBounds().Union(t.b2.GetTracer(wv).GetBounds()).Union(t.b3.GetTracer(wv).GetBounds())
 	if t.b4 != nil {
-		r = r.Union(t.b4.Bounding())
+		r = r.Union(t.b4.GetTracer(wv).GetBounds())
 	}
 	return r
 }

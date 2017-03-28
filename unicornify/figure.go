@@ -6,7 +6,6 @@ import (
 
 type Thing interface {
 	Project(wv WorldView)
-	Bounding() image.Rectangle
 	GetTracer(wv WorldView) Tracer
 }
 
@@ -38,14 +37,6 @@ func (f *Figure) GetTracer(wv WorldView) Tracer {
 		gt.Add(th.GetTracer(wv))
 	}
 	return &FigureTracer{GroupTracer: gt, f: f, wv: wv}
-}
-
-func (f *Figure) Bounding() image.Rectangle {
-	result := image.Rect(0, 0, 0, 0)
-	for _, t := range f.things {
-		result = result.Union(t.Bounding())
-	}
-	return result
 }
 
 func (f *Figure) Scale(factor float64) {

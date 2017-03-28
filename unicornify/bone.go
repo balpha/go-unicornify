@@ -53,7 +53,7 @@ func (b *Bone) GetTracer(wv WorldView) Tracer {
 		length := v.Length()
 		vx, vy := CrossAxes(v.Times(1 / length))
 
-		bounding := b.Bounding()
+		bounding := NewBoneTracer(b1, b2).GetBounds()
 		parts := bounding.Dy()
 		if bounding.Dx() > bounding.Dy() {
 			parts = bounding.Dx()
@@ -111,10 +111,6 @@ func (b *Bone) GetTracer(wv WorldView) Tracer {
 		return result
 
 	}
-}
-
-func (b Bone) Bounding() image.Rectangle {
-	return b.Balls[0].Bounding().Union(b.Balls[1].Bounding())
 }
 
 type BoneTracer struct {

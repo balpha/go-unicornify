@@ -1,9 +1,5 @@
 package unicornify
 
-import (
-	"image"
-)
-
 type Ball struct {
 	Center     Point3d
 	Radius     float64
@@ -63,12 +59,6 @@ func (b *Ball) MoveToBone(bone Bone) {
 		b.MoveToSphere(*ib)
 
 	}
-}
-
-func (b Ball) Bounding() image.Rectangle {
-	x, y := b.Projection.X(), b.Projection.Y()
-	r := b.Projection.Radius
-	return image.Rect(int(x-r), int(y-r), int(x+r+2), int(y+r+1))
 }
 
 type BallProjection struct {
