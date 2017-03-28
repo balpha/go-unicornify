@@ -181,7 +181,11 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 	}
 
 	if parallelize {
-		DrawTracerParallel(tracer, img, yCallback, 8)
+		parts := size / 128
+		if parts < 8 {
+			parts = 8
+		}
+		DrawTracerParallel(tracer, img, yCallback, parts)
 	} else {
 		DrawTracer(tracer, img, yCallback)
 	}
