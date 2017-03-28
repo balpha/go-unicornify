@@ -55,6 +55,14 @@ func (p Point3d) Unit() Point3d {
 	return p.Times(1 / p.Length())
 }
 
+func (a Point3d) CrossProd(b Point3d) Point3d {
+	return Point3d{
+		a.Y()*b.Z()-a.Z()*b.Y(),
+		a.Z()*b.X()-a.X()*b.Z(),
+		a.X()*b.Y()-a.Y()*b.X(),
+	}
+}
+
 func (p Point3d) Neg() Point3d {
 	return Point3d{
 		-p[0],
