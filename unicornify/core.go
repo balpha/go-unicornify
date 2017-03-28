@@ -52,9 +52,8 @@ func (p Point3d) ScalarProd(v Point3d) float64 {
 }
 
 func (p Point3d) Unit() Point3d {
-	return p.Times(1/p.Length())
+	return p.Times(1 / p.Length())
 }
-
 
 func (p Point3d) Neg() Point3d {
 	return Point3d{

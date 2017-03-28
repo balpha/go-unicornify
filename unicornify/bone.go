@@ -97,7 +97,7 @@ func (b *Bone) GetTracer(wv WorldView) Tracer {
 			}
 
 			tracer := NewBoneTracer(prevBall, curBall)
-			
+
 			subgroup.Add(tracer)
 
 			if i%5 == 0 || i == parts {
@@ -133,18 +133,16 @@ func (t *BoneTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
 func (t *BoneTracer) traceImpl(x, y float64, backside bool) (bool, float64, Point3d, Color) {
 	focalLength := t.b1.Projection.ProjectedCenterCS.Z()
 	v1, v2, v3 := Point3d{x, y, focalLength}.Unit().Decompose()
-	
 
-	c1 := sqr(v1)+sqr(v2)+sqr(v3) // note: always 1
-	c2 := -sqr(t.dr)+sqr(t.w1)+sqr(t.w2)+sqr(t.w3)
-	c3 := -2*(v1*t.w1+v2*t.w2+v3*t.w3)
-	c4 := -2*t.ra*t.dr+2*(t.a1*t.w1+t.a2*t.w2+t.a3*t.w3)
-	c5 := -2*(v1*t.a1+v2*t.a2+v3*t.a3)
-	c6 := -sqr(t.ra)+sqr(t.a1)+sqr(t.a2)+sqr(t.a3)
-	
-	
-	var z,f float64
-	
+	c1 := sqr(v1) + sqr(v2) + sqr(v3) // note: always 1
+	c2 := -sqr(t.dr) + sqr(t.w1) + sqr(t.w2) + sqr(t.w3)
+	c3 := -2 * (v1*t.w1 + v2*t.w2 + v3*t.w3)
+	c4 := -2*t.ra*t.dr + 2*(t.a1*t.w1+t.a2*t.w2+t.a3*t.w3)
+	c5 := -2 * (v1*t.a1 + v2*t.a2 + v3*t.a3)
+	c6 := -sqr(t.ra) + sqr(t.a1) + sqr(t.a2) + sqr(t.a3)
+
+	var z, f float64
+
 	if c2 == 0 {
 		if t.dr > 0 {
 			f = 1
@@ -152,33 +150,32 @@ func (t *BoneTracer) traceImpl(x, y float64, backside bool) (bool, float64, Poin
 			f = 0
 		}
 	} else {
-		c7 := c3/c2
-		c8 := c4/c2
-		c9 := c1/c2
-		c10 := c5/c2
-		c11 := c6/c2
-		c12 := sqr(c7)/4-c9
-		c13 := c7*c8/2-c10
-		c14:= sqr(c8)/4-c11
-		
-		pz := c13/c12
-		qz := c14/c12
-		discz := sqr(pz)/4-qz
-		
-		
+		c7 := c3 / c2
+		c8 := c4 / c2
+		c9 := c1 / c2
+		c10 := c5 / c2
+		c11 := c6 / c2
+		c12 := sqr(c7)/4 - c9
+		c13 := c7*c8/2 - c10
+		c14 := sqr(c8)/4 - c11
+
+		pz := c13 / c12
+		qz := c14 / c12
+		discz := sqr(pz)/4 - qz
+
 		if discz < 0 {
 			return false, 0, NoDirection, Color{}
 		}
-		
+
 		rdiscz := math.Sqrt(discz)
 		z1 := -pz/2 + rdiscz
 		z2 := -pz/2 - rdiscz
-		f1 := -(c3*z1+c4)/(2*c2)
-		f2 := -(c3*z2+c4)/(2*c2)
-		
-		g1 := t.ra+f1*t.dr>=0
-		g2 := t.ra+f2*t.dr>=0
-		
+		f1 := -(c3*z1 + c4) / (2 * c2)
+		f2 := -(c3*z2 + c4) / (2 * c2)
+
+		g1 := t.ra+f1*t.dr >= 0
+		g2 := t.ra+f2*t.dr >= 0
+
 		if !g1 {
 			z1, f1 = z2, f2
 			if t.dr > 0 {
@@ -193,51 +190,50 @@ func (t *BoneTracer) traceImpl(x, y float64, backside bool) (bool, float64, Poin
 				f1 = 1
 			} else {
 				f1 = 0
-			}			
+			}
 		}
-		
+
 		if backside {
 			z = z1
 			f = f1
 		} else {
 			z = z2
-			f = f2				
+			f = f2
 		}
 	}
-	
-	
-	if f<=0 || f>=1 {
+
+	if f <= 0 || f >= 1 {
 		f = math.Min(1, math.Max(0, f))
-		pz := (c3*f+c5)/c1
-		qz := (c2*sqr(f)+c4*f+c6)/c1
-		discz := sqr(pz)/4-qz
+		pz := (c3*f + c5) / c1
+		qz := (c2*sqr(f) + c4*f + c6) / c1
+		discz := sqr(pz)/4 - qz
 		if discz < 0 {
 			f = 1 - f
-			pz = (c3*f+c5)/c1
-			qz = (c2*sqr(f)+c4*f+c6)/c1
-			discz = sqr(pz)/4-qz
+			pz = (c3*f + c5) / c1
+			qz = (c2*sqr(f) + c4*f + c6) / c1
+			discz = sqr(pz)/4 - qz
 
 			if discz < 0 {
 				return false, 0, NoDirection, Color{}
 			}
 		}
-		
+
 		if backside {
 			z = -pz/2 + math.Sqrt(discz)
 		} else {
 			z = -pz/2 - math.Sqrt(discz)
 		}
-		
+
 	}
 
 	m1 := t.a1 + f*t.w1
 	m2 := t.a2 + f*t.w2
-	m3 := t.a3 + f*t.w3	
-	
+	m3 := t.a3 + f*t.w3
+
 	p := Point3d{v1, v2, v3}.Times(z)
-	dir := p.Minus(Point3d{m1,m2,m3})
+	dir := p.Minus(Point3d{m1, m2, m3})
 	return true, z, dir, MixColors(t.b1.Color, t.b2.Color, f)
-	
+
 }
 
 func (t *BoneTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
@@ -266,7 +262,7 @@ func NewBoneTracer(b1, b2 *Ball) *BoneTracer {
 
 	pcx1, pcy1, pr1 := b1.Projection.X(), b1.Projection.Y(), b1.Projection.Radius
 	pcx2, pcy2, pr2 := b2.Projection.X(), b2.Projection.Y(), b2.Projection.Radius
-	
+
 	t.xmin = roundDown(math.Min(pcx1-pr1, pcx2-pr2))
 	t.xmax = roundUp(math.Max(pcx1+pr1, pcx2+pr2))
 	t.ymin = roundDown(math.Min(pcy1-pr1, pcy2-pr2))

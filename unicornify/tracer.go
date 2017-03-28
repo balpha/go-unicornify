@@ -57,7 +57,7 @@ func (first TraceIntervals) Intersect(second TraceIntervals) TraceIntervals {
 		}
 		if i1+1 == len(first) {
 			i2++
-		} else if i2+1==len(second) {
+		} else if i2+1 == len(second) {
 			i1++
 		} else if first[i1+1].Start.Z <= second[i2+1].Start.Z {
 			i1++
@@ -142,6 +142,7 @@ type WrappingTracer interface {
 	Tracer
 	Add(tracers ...Tracer)
 }
+
 func DrawTracerPartial(t Tracer, img *image.RGBA, yCallback func(int), bounds image.Rectangle, c chan bool) {
 	r := bounds.Intersect(t.GetBounds())
 	for y := r.Min.Y; y <= r.Max.Y; y++ {
@@ -412,6 +413,7 @@ func NewPointLightTracer(source Tracer, lightPos ...Point3d) *PointLightTracer {
 type DifferenceTracer struct {
 	Base, Subtrahend Tracer
 }
+
 func (t *DifferenceTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 	ok1, i1 := t.Base.TraceDeep(x, y)
 	ok2, i2 := t.Subtrahend.TraceDeep(x, y)
@@ -442,6 +444,7 @@ func NewDifferenceTracer(base, subtrahend Tracer) *DifferenceTracer {
 type IntersectionTracer struct {
 	Base, Other Tracer
 }
+
 func (t *IntersectionTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 	ok1, i1 := t.Base.TraceDeep(x, y)
 	ok2, i2 := t.Other.TraceDeep(x, y)
