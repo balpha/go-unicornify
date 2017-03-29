@@ -117,22 +117,20 @@ func MixFloats(f1, f2, f float64) float64 {
 }
 
 func IntersectionOfPlaneAndLine(p0, ep1, ep2, l0, el Point3d) (ok bool, intersection Point3d) {
-	A := [][]float64{
-		[]float64{ep1.X(), ep2.X(), -el.X()},
-		[]float64{ep1.Y(), ep2.Y(), -el.Y()},
-		[]float64{ep1.Z(), ep2.Z(), -el.Z()},
+	A := [3][3]float64{
+		[3]float64{ep1.X(), ep2.X(), -el.X()},
+		[3]float64{ep1.Y(), ep2.Y(), -el.Y()},
+		[3]float64{ep1.Z(), ep2.Z(), -el.Z()},
 	}
 	b := l0.Minus(p0)
 	// need to solve Ax = b where x = (fp1, fp2, fl)
 
-	swaps := make([][]int, 0)
 	for i := 0; i <= 2; i++ {
 		if A[i][i] != 0 {
 			continue
 		}
 		for j := i + 1; j <= 2; j++ {
 			if A[j][i] != 0 {
-				swaps = append(swaps, []int{i, j})
 				A[i], A[j] = A[j], A[i]
 				b[i], b[j] = b[j], b[i]
 				break

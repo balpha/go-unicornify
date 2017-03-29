@@ -89,7 +89,6 @@ func (first TraceIntervals) Union(second TraceIntervals) TraceIntervals {
 
 func (is TraceIntervals) Invert() TraceIntervals {
 	//TODO: handle inf start&end
-	result := TraceIntervals{}
 	if len(is) == 0 {
 		return TraceIntervals{
 			TraceInterval{
@@ -98,19 +97,20 @@ func (is TraceIntervals) Invert() TraceIntervals {
 			},
 		}
 	}
+	result := make(TraceIntervals, len(is) + 1)
 	prev := TraceResult{math.Inf(-1), is[0].Start.Direction, is[0].Start.Color}
-	for _, i := range is {
+	for index, i := range is {
 		n := TraceInterval{
 			Start: prev,
 			End:   TraceResult{i.Start.Z, i.Start.Direction.Neg(), i.Start.Color},
 		}
-		result = append(result, n)
+		result[index] = n
 		prev = TraceResult{i.End.Z, i.End.Direction.Neg(), i.End.Color}
 	}
-	result = append(result, TraceInterval{
+	result[len(is)] = TraceInterval{
 		Start: prev,
 		End:   TraceResult{math.Inf(1), prev.Direction.Neg(), prev.Color},
-	})
+	}
 	return result
 }
 
