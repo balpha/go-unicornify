@@ -57,9 +57,9 @@ func (p Point3d) Unit() Point3d {
 
 func (a Point3d) CrossProd(b Point3d) Point3d {
 	return Point3d{
-		a.Y()*b.Z()-a.Z()*b.Y(),
-		a.Z()*b.X()-a.X()*b.Z(),
-		a.X()*b.Y()-a.Y()*b.X(),
+		a.Y()*b.Z() - a.Z()*b.Y(),
+		a.Z()*b.X() - a.X()*b.Z(),
+		a.X()*b.Y() - a.Y()*b.X(),
 	}
 }
 
@@ -116,7 +116,7 @@ func MixFloats(f1, f2, f float64) float64 {
 	return f1 + f*(f2-f1)
 }
 
-func IntersectionOfPlaneAndLine(p0, ep1, ep2, l0, el Point3d) (ok bool, intersection Point3d) {
+func intersectionOfPlaneAndLineReadable(p0, ep1, ep2, l0, el Point3d) (ok bool, intersection Point3d) {
 	A := [3][3]float64{
 		[3]float64{ep1.X(), ep2.X(), -el.X()},
 		[3]float64{ep1.Y(), ep2.Y(), -el.Y()},
@@ -124,23 +124,26 @@ func IntersectionOfPlaneAndLine(p0, ep1, ep2, l0, el Point3d) (ok bool, intersec
 	}
 	b := l0.Minus(p0)
 	// need to solve Ax = b where x = (fp1, fp2, fl)
-
 	for i := 0; i <= 2; i++ {
-		if A[i][i] != 0 {
-			continue
-		}
-		for j := i + 1; j <= 2; j++ {
-			if A[j][i] != 0 {
-				A[i], A[j] = A[j], A[i]
-				b[i], b[j] = b[j], b[i]
-				break
+		maxabs := 0.0
+		maxi := -1
+		for j := i; j <= 2; j++ {
+			thisabs := math.Abs(A[j][i])
+			if thisabs > maxabs {
+				maxi = j
+				maxabs = thisabs
 			}
 		}
-	}
+		if maxi > -1 && maxi != i {
+			A[i], A[maxi] = A[maxi], A[i]
+			b[i], b[maxi] = b[maxi], b[i]
 
-	for i := 0; i <= 1; i++ {
+		}
+		if A[i][i] == 0 {
+			return false, Point3d{}
+		}
 		for k := i + 1; k <= 2; k++ {
-			A[k][i] = A[k][i] / A[i][i] //!
+			A[k][i] = A[k][i] / A[i][i]
 			for j := i + 1; j <= 2; j++ {
 				A[k][j] = A[k][j] - A[k][i]*A[i][j]
 			}
@@ -165,4 +168,116 @@ func IntersectionOfPlaneAndLine(p0, ep1, ep2, l0, el Point3d) (ok bool, intersec
 	}
 
 	return true, x
+}
+
+func IntersectionOfPlaneAndLine(p0, ep1, ep2, l0, el Point3d) (ok bool, intersection Point3d) {
+	A00, A01, A02, A10, A11, A12, A20, A21, A22 := ep1.X(), ep2.X(), -el.X(), ep1.Y(), ep2.Y(), -el.Y(), ep1.Z(), ep2.Z(), -el.Z()
+	b0, b1, b2 := l0.Minus(p0).Decompose()
+	// need to solve Ax = b where x = (fp1, fp2, fl)
+
+	/*
+		for i := 0; i <= 2; i++ {
+			maxabs := 0.0
+			maxi := -1
+			for j := i; j <= 2; j++ {
+				thisabs := math.Abs(A[j][i])
+				if thisabs > maxabs {
+					maxi = j
+					maxabs = thisabs
+				}
+			}
+			if maxi > -1 && maxi != i {
+				A[i], A[maxi] = A[maxi], A[i]
+				b[i], b[maxi] = b[maxi], b[i]
+
+			}
+			if A[i][i] == 0 {
+				return false, Point3d{}
+			}
+			for k := i + 1; k <= 2; k++ {
+				A[k][i] = A[k][i] / A[i][i]
+				for j := i + 1; j <= 2; j++ {
+					A[k][j] = A[k][j] - A[k][i]*A[i][j]
+				}
+			}
+		}*/
+
+	//i = 0
+	abs0 := math.Abs(A00)
+	abs1 := math.Abs(A10)
+	abs2 := math.Abs(A20)
+	if abs1 > abs0 || abs2 > abs0 {
+		if abs1 > abs2 {
+			A00, A01, A02, A10, A11, A12 = A10, A11, A12, A00, A01, A02
+			b0, b1 = b1, b0
+		} else {
+			A00, A01, A02, A20, A21, A22 = A20, A21, A22, A00, A01, A02
+			b0, b2 = b2, b0
+		}
+	}
+	if A00 == 0 {
+		return false, Point3d{}
+	}
+	//   k=1
+	A10 /= A00
+	//     j=1
+	A11 -= A10 * A01
+	//     j=2
+	A12 -= A10 * A02
+	//   k=2
+	A20 /= A00
+	//     j=1
+	A21 -= A20 * A01
+	//     j=2
+	A22 -= A20 * A02
+
+	//i=1
+	abs1 = math.Abs(A11)
+	abs2 = math.Abs(A21)
+	if abs2 > abs1 {
+		A10, A11, A12, A20, A21, A22 = A20, A21, A22, A10, A11, A12
+		b1, b2 = b2, b1
+	}
+	if A11 == 0 {
+		return false, Point3d{}
+	}
+	//   k=2
+	A21 /= A11
+	//     j=2
+	A22 -= A21 * A12
+
+	//i=2
+	if A22 == 0 {
+		return false, Point3d{}
+	}
+
+	// ---------------------------------------------
+
+	/*y := Point3d{}
+	for i := 0; i <= 2; i++ {
+		y[i] = b[i]
+		for k := 0; k <= i-1; k++ {
+			y[i] -= A[i][k] * y[k]
+		}
+	}*/
+
+	b1 -= A10 * b0
+	b2 -= A20*b0 + A21*b1
+
+	// -------------------------------------
+
+	/*x := Point3d{}
+	for i := 2; i >= 0; i-- {
+		x[i] = y[i]
+		for k := i + 1; k <= 2; k++ {
+			x[i] -= A[i][k] * x[k]
+		}
+		x[i] /= A[i][i]
+	}*/
+
+	b2 /= A22
+	b1 = (b1 - A12*b2) / A11
+	b0 = (b0 - (A01*b1 + A02*b2)) / A00
+
+	return true, Point3d{b0, b1, b2}
 }
