@@ -117,6 +117,7 @@ func (b *Bone) GetTracer(wv WorldView) Tracer {
 type BoneTracer struct {
 	xmin, xmax, ymin, ymax         int
 	w1, w2, w3, a1, a2, a3, ra, dr float64
+	c2, c4, c6, c8, c9, c11, c14   float64
 	b1, b2                         BallProjection
 }
 
@@ -131,33 +132,25 @@ func (t *BoneTracer) traceImpl(x, y float64, backside bool) (bool, float64, Poin
 	focalLength := t.b1.ProjectedCenterCS.Z()
 	v1, v2, v3 := Point3d{x, y, focalLength}.Unit().Decompose()
 
-	c1 := sqr(v1) + sqr(v2) + sqr(v3) // note: always 1
-	c2 := -sqr(t.dr) + sqr(t.w1) + sqr(t.w2) + sqr(t.w3)
 	c3 := -2 * (v1*t.w1 + v2*t.w2 + v3*t.w3)
-	c4 := -2*t.ra*t.dr + 2*(t.a1*t.w1+t.a2*t.w2+t.a3*t.w3)
 	c5 := -2 * (v1*t.a1 + v2*t.a2 + v3*t.a3)
-	c6 := -sqr(t.ra) + sqr(t.a1) + sqr(t.a2) + sqr(t.a3)
 
 	var z, f float64
 
-	if c2 == 0 {
+	if t.c2 == 0 {
 		if t.dr > 0 {
 			f = 1
 		} else {
 			f = 0
 		}
 	} else {
-		c7 := c3 / c2
-		c8 := c4 / c2
-		c9 := c1 / c2
-		c10 := c5 / c2
-		c11 := c6 / c2
-		c12 := sqr(c7)/4 - c9
-		c13 := c7*c8/2 - c10
-		c14 := sqr(c8)/4 - c11
+		c7 := c3 / t.c2
+		c10 := c5 / t.c2
+		c12 := sqr(c7)/4 - t.c9
+		c13 := c7*t.c8/2 - c10
 
 		pz := c13 / c12
-		qz := c14 / c12
+		qz := t.c14 / c12
 		discz := sqr(pz)/4 - qz
 
 		if discz < 0 {
@@ -167,8 +160,8 @@ func (t *BoneTracer) traceImpl(x, y float64, backside bool) (bool, float64, Poin
 		rdiscz := math.Sqrt(discz)
 		z1 := -pz/2 + rdiscz
 		z2 := -pz/2 - rdiscz
-		f1 := -(c3*z1 + c4) / (2 * c2)
-		f2 := -(c3*z2 + c4) / (2 * c2)
+		f1 := -(c3*z1 + t.c4) / (2 * t.c2)
+		f2 := -(c3*z2 + t.c4) / (2 * t.c2)
 
 		g1 := t.ra+f1*t.dr >= 0
 		g2 := t.ra+f2*t.dr >= 0
@@ -201,13 +194,13 @@ func (t *BoneTracer) traceImpl(x, y float64, backside bool) (bool, float64, Poin
 
 	if f <= 0 || f >= 1 {
 		f = math.Min(1, math.Max(0, f))
-		pz := (c3*f + c5) / c1
-		qz := (c2*sqr(f) + c4*f + c6) / c1
+		pz := c3*f + c5
+		qz := t.c2*sqr(f) + t.c4*f + t.c6
 		discz := sqr(pz)/4 - qz
 		if discz < 0 {
 			f = 1 - f
-			pz = (c3*f + c5) / c1
-			qz = (c2*sqr(f) + c4*f + c6) / c1
+			pz = c3*f + c5
+			qz = t.c2*sqr(f) + t.c4*f + t.c6
 			discz = sqr(pz)/4 - qz
 
 			if discz < 0 {
@@ -275,6 +268,14 @@ func NewBoneTracer(b1, b2 BallProjection) *BoneTracer {
 
 	t.ra = float64(r1)
 	t.dr = float64(r2 - r1)
+
+	t.c2 = -sqr(t.dr) + sqr(t.w1) + sqr(t.w2) + sqr(t.w3)
+	t.c4 = -2*t.ra*t.dr + 2*(t.a1*t.w1+t.a2*t.w2+t.a3*t.w3)
+	t.c6 = -sqr(t.ra) + sqr(t.a1) + sqr(t.a2) + sqr(t.a3)
+	t.c8 = t.c4 / t.c2
+	t.c9 = 1 / t.c2
+	t.c11 = t.c6 / t.c2
+	t.c14 = sqr(t.c8)/4 - t.c11
 
 	return t
 }
