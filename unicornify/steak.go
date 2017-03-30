@@ -2,7 +2,6 @@ package unicornify
 
 import (
 	"image"
-	"math"
 )
 
 type Steak struct {
