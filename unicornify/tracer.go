@@ -72,7 +72,7 @@ func (first TraceIntervals) Union(second TraceIntervals) TraceIntervals {
 	first = first.Intersect(second.Invert())
 	i1 := 0
 	i2 := 0
-	result := TraceIntervals{}
+	result := make(TraceIntervals, 0, len(first)+len(second))
 	for i1 < len(first) || i2 < len(second) {
 		if i2 == len(second) || (i1 < len(first) && first[i1].Start.Z <= second[i2].Start.Z) {
 			result = append(result, first[i1])
@@ -443,6 +443,7 @@ func NewDifferenceTracer(base, subtrahend Tracer) *DifferenceTracer {
 
 type IntersectionTracer struct {
 	Base, Other Tracer
+	bounds      image.Rectangle
 }
 
 func (t *IntersectionTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
@@ -456,7 +457,7 @@ func (t *IntersectionTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 }
 
 func (t *IntersectionTracer) GetBounds() image.Rectangle {
-	return t.Base.GetBounds().Intersect(t.Other.GetBounds())
+	return t.bounds
 }
 
 func (t *IntersectionTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
@@ -464,7 +465,7 @@ func (t *IntersectionTracer) Trace(x, y float64) (bool, float64, Point3d, Color)
 }
 
 func NewIntersectionTracer(base, other Tracer) *IntersectionTracer {
-	return &IntersectionTracer{base, other}
+	return &IntersectionTracer{base, other, base.GetBounds().Intersect(other.GetBounds())}
 }
 
 // ------- ScalingTracer -------
@@ -472,6 +473,7 @@ func NewIntersectionTracer(base, other Tracer) *IntersectionTracer {
 type ScalingTracer struct {
 	Source Tracer
 	Scale  float64
+	bounds image.Rectangle
 }
 
 func (t *ScalingTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
@@ -479,9 +481,7 @@ func (t *ScalingTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 }
 
 func (t *ScalingTracer) GetBounds() image.Rectangle {
-	b := t.Source.GetBounds()
-	s := t.Scale
-	return rectFromFloats(float64(b.Min.X)*s, float64(b.Min.Y)*s, float64(b.Max.X)*s, float64(b.Max.Y)*s)
+	return t.bounds
 }
 
 func (t *ScalingTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
@@ -489,7 +489,9 @@ func (t *ScalingTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
 }
 
 func NewScalingTracer(source Tracer, scale float64) *ScalingTracer {
-	return &ScalingTracer{source, scale}
+	b := source.GetBounds()
+	bounds := rectFromFloats(float64(b.Min.X)*scale, float64(b.Min.Y)*scale, float64(b.Max.X)*scale, float64(b.Max.Y)*scale)
+	return &ScalingTracer{source, scale, bounds}
 }
 
 // ------- TranslatingTracer -------
@@ -497,6 +499,7 @@ func NewScalingTracer(source Tracer, scale float64) *ScalingTracer {
 type TranslatingTracer struct {
 	Source         Tracer
 	ShiftX, ShiftY float64
+	bounds         image.Rectangle
 }
 
 func (t *TranslatingTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
@@ -504,8 +507,7 @@ func (t *TranslatingTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 }
 
 func (t *TranslatingTracer) GetBounds() image.Rectangle {
-	b := t.Source.GetBounds()
-	return rectFromFloats(float64(b.Min.X)+t.ShiftX, float64(b.Min.Y)+t.ShiftY, float64(b.Max.X)+t.ShiftX, float64(b.Max.Y)+t.ShiftY)
+	return t.bounds
 }
 
 func (t *TranslatingTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
@@ -513,5 +515,7 @@ func (t *TranslatingTracer) Trace(x, y float64) (bool, float64, Point3d, Color) 
 }
 
 func NewTranslatingTracer(source Tracer, dx, dy float64) *TranslatingTracer {
-	return &TranslatingTracer{source, dx, dy}
+	b := source.GetBounds()
+	bounds := rectFromFloats(float64(b.Min.X)+dx, float64(b.Min.Y)+dy, float64(b.Max.X)+dx, float64(b.Max.Y)+dy)
+	return &TranslatingTracer{source, dx, dy, bounds}
 }
