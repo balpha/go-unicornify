@@ -73,7 +73,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 
 	lookAtPoint := uni.Shoulder.Center.Shifted(uni.Head.Center.Shifted(uni.Shoulder.Center.Neg()).Times(factor))
 	cp := lookAtPoint.Shifted(Point3d{0, 0, -3 * focalLength}).RotatedAround(uni.Head.Center, -xAngle, 0).RotatedAround(uni.Head.Center, -yAngle, 1)
-	wv := PerspectiveWorldView{
+	wv := WorldView{
 		CameraPosition: cp,
 		LookAtPoint:    lookAtPoint,
 		FocalLength:    focalLength,
