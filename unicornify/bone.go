@@ -42,9 +42,11 @@ func (b *Bone) Project(wv WorldView) {
 func (b *Bone) GetTracer(wv WorldView) Tracer {
 	b1 := b.Balls[0]
 	b2 := b.Balls[1]
+	proj1 := wv.ProjectBall(b1)
+	proj2 := wv.ProjectBall(b2)
 
 	if b.XFunc == nil && b.YFunc == nil {
-		return NewBoneTracer(b1, b2)
+		return NewBoneTracer(proj1, proj2)
 	} else {
 		c1 := b1.Color
 		c2 := b2.Color
@@ -53,14 +55,14 @@ func (b *Bone) GetTracer(wv WorldView) Tracer {
 		length := v.Length()
 		vx, vy := CrossAxes(v.Times(1 / length))
 
-		bounding := NewBoneTracer(b1, b2).GetBounds()
+		bounding := NewBoneTracer(proj1, proj2).GetBounds()
 		parts := bounding.Dy()
 		if bounding.Dx() > bounding.Dy() {
 			parts = bounding.Dx()
 		}
 		parts = roundUp(float64(parts) * SCALE)
 
-		calcBall := func(factor float64) *Ball {
+		calcBall := func(factor float64) BallProjection {
 			col := MixColors(c1, c2, factor)
 			fx, fy := factor, factor
 			if f := b.XFunc; f != nil {
@@ -72,12 +74,11 @@ func (b *Bone) GetTracer(wv WorldView) Tracer {
 
 			c := b1.Center.Shifted(v.Times(factor)).Shifted(vx.Times((fx - factor) * length)).Shifted(vy.Times((fy - factor) * length))
 			r := MixFloats(b1.Radius, b2.Radius, factor)
-			ball := NewBallP(c, r, col)
-			ball.Project(b1.Projection.WorldView)
-			return ball
+			ballp := wv.ProjectBall(NewBallP(c, r, col))
+			return ballp
 		}
 
-		prevBall := b1
+		prevBall := proj1
 
 		result := NewGroupTracer()
 		subgroup := NewGroupTracer()
@@ -89,8 +90,8 @@ func (b *Bone) GetTracer(wv WorldView) Tracer {
 
 			if i < parts {
 				nextBall = calcBall(float64(i+1) / float64(parts))
-				seg1 := curBall.Center.Minus(prevBall.Center)
-				seg2 := nextBall.Center.Minus(curBall.Center)
+				seg1 := curBall.BaseBall.Center.Minus(prevBall.BaseBall.Center)
+				seg2 := nextBall.BaseBall.Center.Minus(curBall.BaseBall.Center)
 				if seg1.ScalarProd(seg2)/(seg1.Length()*seg2.Length()) > 0.999848 { // cosine of 1°
 					continue
 				}
@@ -116,7 +117,7 @@ func (b *Bone) GetTracer(wv WorldView) Tracer {
 type BoneTracer struct {
 	xmin, xmax, ymin, ymax         int
 	w1, w2, w3, a1, a2, a3, ra, dr float64
-	b1, b2                         *Ball
+	b1, b2                         BallProjection
 }
 
 func (t *BoneTracer) GetBounds() image.Rectangle {
@@ -127,7 +128,7 @@ func (t *BoneTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
 	return t.traceImpl(x, y, false)
 }
 func (t *BoneTracer) traceImpl(x, y float64, backside bool) (bool, float64, Point3d, Color) {
-	focalLength := t.b1.Projection.ProjectedCenterCS.Z()
+	focalLength := t.b1.ProjectedCenterCS.Z()
 	v1, v2, v3 := Point3d{x, y, focalLength}.Unit().Decompose()
 
 	c1 := sqr(v1) + sqr(v2) + sqr(v3) // note: always 1
@@ -228,7 +229,7 @@ func (t *BoneTracer) traceImpl(x, y float64, backside bool) (bool, float64, Poin
 
 	p := Point3d{v1, v2, v3}.Times(z)
 	dir := p.Minus(Point3d{m1, m2, m3})
-	return true, z, dir, MixColors(t.b1.Color, t.b2.Color, f)
+	return true, z, dir, MixColors(t.b1.BaseBall.Color, t.b2.BaseBall.Color, f)
 
 }
 
@@ -249,15 +250,15 @@ func (t *BoneTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 	return false, TraceIntervals{}
 }
 
-func NewBoneTracer(b1, b2 *Ball) *BoneTracer {
+func NewBoneTracer(b1, b2 BallProjection) *BoneTracer {
 
 	t := &BoneTracer{b1: b1, b2: b2}
 
-	cx1, cy1, cz1, r1 := b1.Projection.CenterCS.X(), b1.Projection.CenterCS.Y(), b1.Projection.CenterCS.Z(), b1.Radius
-	cx2, cy2, cz2, r2 := b2.Projection.CenterCS.X(), b2.Projection.CenterCS.Y(), b2.Projection.CenterCS.Z(), b2.Radius
+	cx1, cy1, cz1, r1 := b1.CenterCS.X(), b1.CenterCS.Y(), b1.CenterCS.Z(), b1.BaseBall.Radius
+	cx2, cy2, cz2, r2 := b2.CenterCS.X(), b2.CenterCS.Y(), b2.CenterCS.Z(), b2.BaseBall.Radius
 
-	pcx1, pcy1, pr1 := b1.Projection.X(), b1.Projection.Y(), b1.Projection.Radius
-	pcx2, pcy2, pr2 := b2.Projection.X(), b2.Projection.Y(), b2.Projection.Radius
+	pcx1, pcy1, pr1 := b1.X(), b1.Y(), b1.ProjectedRadius
+	pcx2, pcy2, pr2 := b2.X(), b2.Y(), b2.ProjectedRadius
 
 	t.xmin = roundDown(math.Min(pcx1-pr1, pcx2-pr2))
 	t.xmax = roundUp(math.Max(pcx1+pr1, pcx2+pr2))

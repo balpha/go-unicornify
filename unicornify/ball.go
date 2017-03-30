@@ -1,10 +1,9 @@
 package unicornify
 
 type Ball struct {
-	Center     Point3d
-	Radius     float64
-	Color      Color
-	Projection BallProjection
+	Center Point3d
+	Radius float64
+	Color  Color
 }
 
 func NewBall(x, y, z, r float64, c Color) *Ball {
@@ -65,8 +64,9 @@ type BallProjection struct {
 	CenterCS          Point3d // the center in camera space (camera at (0,0,0), Z axis in view direction)
 	ProjectedCenterCS Point3d // the projection in camera space (note that by definition, Z will always be = focal length)
 	ProjectedCenterOS Point3d // the projection in original space
-	Radius            float64
+	ProjectedRadius   float64
 	WorldView         WorldView
+	BaseBall          Ball // yeah sorry, but that's exactly what it is (btw, note this isn't a pointer)
 }
 
 func (bp BallProjection) X() float64 {

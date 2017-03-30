@@ -4,14 +4,11 @@ import (
 	"math"
 )
 
-type WorldView interface {
-	ProjectBall(*Ball)
-}
-
-type PerspectiveWorldView struct {
+type WorldView struct {
 	CameraPosition Point3d
 	LookAtPoint    Point3d
 	FocalLength    float64
+	ux, uy, zero   Point3d
 }
 
 // Given a vector v, returns the two vectors that form a right-hand rule system
@@ -51,25 +48,35 @@ func CrossAxes(v Point3d) (u1, u2 Point3d) {
 	return ux, uy
 }
 
-func (wv PerspectiveWorldView) ProjectBall(b *Ball) {
+func (wv *WorldView) Init() {
+	view := wv.LookAtPoint.Shifted(wv.CameraPosition.Neg())
+	n := view.Times(1.0 / view.Length())
+	wv.ux, wv.uy = CrossAxes(n)
+	wv.zero = wv.CameraPosition.Shifted(wv.LookAtPoint.Shifted(wv.CameraPosition.Neg()).Unit().Times(wv.FocalLength))
+}
+
+func (wv WorldView) UnProject(p Point3d) Point3d {
+	pos := wv.zero.Shifted(wv.ux.Times(p.X())).Shifted(wv.uy.Times(p.Y()))
+	return wv.CameraPosition.Shifted(pos.Minus(wv.CameraPosition).Unit().Times(p.Z()))
+}
+
+func (wv WorldView) ProjectBall(b *Ball) BallProjection {
 	cam2c := b.Center.Minus(wv.CameraPosition)
 	view := wv.LookAtPoint.Shifted(wv.CameraPosition.Neg())
 	n := view.Times(1.0 / view.Length())
 
-	ux, uy := CrossAxes(n)
-
-	ok, intf := IntersectionOfPlaneAndLine(wv.CameraPosition.Shifted(n.Times(wv.FocalLength)), ux, uy, wv.CameraPosition, cam2c)
+	ok, intf := IntersectionOfPlaneAndLine(wv.CameraPosition.Shifted(n.Times(wv.FocalLength)), wv.ux, wv.uy, wv.CameraPosition, cam2c)
 	if !ok { //FIXME
-		b.Projection = BallProjection{}
-		b.Projection.Radius = b.Radius
+		return BallProjection{BaseBall: *b}
 	} else {
 
-		b.Projection = BallProjection{
+		projection := BallProjection{
 			ProjectedCenterOS: wv.CameraPosition.Shifted(cam2c.Times(intf[2])),
 			ProjectedCenterCS: Point3d{intf[0], intf[1], wv.FocalLength},
 			WorldView:         wv,
+			BaseBall:          *b,
 		}
-		b.Projection.CenterCS = b.Projection.ProjectedCenterCS.Times(cam2c.Length() / b.Projection.ProjectedCenterCS.Length())
+		projection.CenterCS = projection.ProjectedCenterCS.Times(cam2c.Length() / projection.ProjectedCenterCS.Length())
 
 		count := 0.0
 		max := 0.0
@@ -81,19 +88,20 @@ func (wv PerspectiveWorldView) ProjectBall(b *Ball) {
 						continue
 					}
 					shift = shift.Times(b.Radius / shift.Length())
-					ok, intf := IntersectionOfPlaneAndLine(wv.CameraPosition.Shifted(n.Times(wv.FocalLength)), ux, uy, wv.CameraPosition, b.Center.Shifted(shift).Minus(wv.CameraPosition))
+					ok, intf := IntersectionOfPlaneAndLine(wv.CameraPosition.Shifted(n.Times(wv.FocalLength)), wv.ux, wv.uy, wv.CameraPosition, b.Center.Shifted(shift).Minus(wv.CameraPosition))
 					if ok {
 						count++
 						rp := Point3d{intf[0], intf[1], 0}
-						max = math.Max(max, math.Sqrt(sqr(rp[0]-b.Projection.X())+sqr(rp[1]-b.Projection.Y())))
+						max = math.Max(max, math.Sqrt(sqr(rp[0]-projection.X())+sqr(rp[1]-projection.Y())))
 					}
 				}
 			}
 
 		}
 
-		b.Projection.Radius = max
+		projection.ProjectedRadius = max
+		return projection
+
 	}
-	return
 
 }

@@ -82,6 +82,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 	Scale := ((unicornScaleFactor-0.5)/2.5*2 + 0.5) * fsize / 140.0
 
 	uni.Project(wv)
+	wv.Init()
 
 	img := image.NewRGBA(image.Rect(0, 0, size, size))
 	if withBackground {
@@ -108,7 +109,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 			} else if l.Hoof.Center.Y() > ymax2 {
 				ymax2 = l.Hoof.Center.Y()
 			}
-			ymaxproj = math.Max(ymaxproj, l.Hoof.Projection.Y())
+			ymaxproj = math.Max(ymaxproj, wv.ProjectBall(l.Hoof).Y())
 		}
 		shiftedY := ymaxproj*Scale + Shift[1]
 		hoofHorizonDist := (shiftedY/fsize - bgdata.Horizon) / (1 - bgdata.Horizon) // 0 = bottom foot at horizon
@@ -127,27 +128,30 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 				yground := math.Min(ymax-h.Radius, ymax2)
 				return yground-h.Center.Y() <= 0
 			} else {
-				return math.Abs(ymaxproj-h.Projection.Y()) <= h.Projection.Radius
+				hproj := wv.ProjectBall(h)
+				return math.Abs(ymaxproj-hproj.Y()) <= hproj.ProjectedRadius
 			}
 		}
 
 		groundHoofs := make([]Leg, 0)
 		for _, l := range uni.Legs {
 			hoof := l.Hoof
+			hproj := wv.ProjectBall(hoof)
 			if !isGroundHoof(hoof, l.Shin) {
 				continue
 			}
 			var i int
-			for i = 0; i < len(groundHoofs) && groundHoofs[i].Hoof.Projection.Z() < hoof.Projection.Z(); i++ {
+			for i = 0; i < len(groundHoofs) && wv.ProjectBall(groundHoofs[i].Hoof).Z() < hproj.Z(); i++ {
 			}
 			head := append(groundHoofs[:i], l)
 			groundHoofs = append(head, groundHoofs[i:]...)
 		}
 		for _, l := range groundHoofs {
 			h := l.Hoof
+			hproj := wv.ProjectBall(h)
 			gimg := image.NewRGBA(image.Rect(0, 0, size, size))
-			shiftedY := h.Projection.Y()*Scale + Shift[1]
-			grassdata.MinBottomY = shiftedY + h.Projection.Radius*Scale
+			shiftedY := hproj.Y()*Scale + Shift[1]
+			grassdata.MinBottomY = shiftedY + hproj.ProjectedRadius*Scale
 			DrawGrass(gimg, grassdata, wv)
 			shinTracer := scaleAndShift(l.Shin.GetTracer(wv))
 			z := func(x, y float64) (bool, float64) {
