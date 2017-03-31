@@ -43,8 +43,9 @@ type UnicornData struct {
 	BrowLength         float64
 	BrowMood           float64 // from -1 (angry) to 1 (astonished)
 
-	PoseKind  func(*Unicorn, float64)
-	PosePhase float64
+	PoseKind      func(*Unicorn, float64)
+	PoseKindIndex int
+	PosePhase     float64
 
 	NeckTilt float64
 	FaceTilt float64
@@ -110,7 +111,8 @@ func (d *UnicornData) Randomize2(rand *pyrand.Random) {
 }
 
 func (d *UnicornData) Randomize3(rand *pyrand.Random) {
-	d.PoseKind = Poses[rand.Choice(len(Poses))]
+	d.PoseKindIndex = rand.Choice(len(Poses))
+	d.PoseKind = Poses[d.PoseKindIndex]
 	d.PosePhase = rand.Random()
 }
 func (d *UnicornData) Randomize4(rand *pyrand.Random) {

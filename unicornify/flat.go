@@ -1,0 +1,78 @@
+package unicornify
+
+import ()
+
+type FlatTracer struct {
+	p1, p2, p3  BallProjection
+	bounds      Bounds
+	fourCorners bool
+	w1, w2      Point3d
+	dir         Point3d
+	fourthColor Color
+	wv          WorldView
+}
+
+func NewFlatTracer(wv WorldView, b1, b2, b3 *Ball, fourCorners bool, fourthColor Color, roughDirection Point3d) *FlatTracer {
+	t := &FlatTracer{
+		p1:          wv.ProjectBall(b1),
+		p2:          wv.ProjectBall(b2),
+		p3:          wv.ProjectBall(b3),
+		wv:          wv,
+		fourCorners: fourCorners,
+	}
+	t.w1 = t.p2.CenterCS.Minus(t.p1.CenterCS)
+	t.w2 = t.p3.CenterCS.Minus(t.p1.CenterCS)
+
+	t.dir = t.w1.CrossProd(t.w2)
+	if t.dir.ScalarProd(roughDirection) < 0 {
+		t.dir = t.dir.Neg()
+	}
+	bounds := RenderingBoundsForBalls(t.p1, t.p2, t.p3)
+	if fourCorners {
+		t.fourthColor = fourthColor
+		b4 := NewBallP(b1.Center.Shifted(b2.Center.Minus(b1.Center)).Shifted(b3.Center.Minus(b1.Center)), 0, Color{})
+		p4 := wv.ProjectBall(b4)
+		bounds = bounds.Union(RenderingBoundsForBalls(p4))
+	}
+	t.bounds = bounds
+	return t
+}
+
+func (t *FlatTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
+	return DeepifyTrace(t, x, y)
+}
+
+func (t *FlatTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
+	v := Point3d{x, y, t.wv.FocalLength}.Unit()
+	return t.TraceRay(v)
+}
+
+func (t *FlatTracer) TraceRay(ray Point3d) (bool, float64, Point3d, Color) {
+	ok, inter := IntersectionOfPlaneAndLine(t.p1.CenterCS, t.w1, t.w2, Point3d{0, 0, 0}, ray)
+	if !ok {
+		return false, 0, NoDirection, Color{}
+	}
+	if inter[0] < 0 || inter[0] > 1 || inter[1] < 0 || inter[1] > 1 {
+		return false, 0, NoDirection, Color{}
+	}
+	if !t.fourCorners && inter[0]+inter[1] > 1 {
+		return false, 0, NoDirection, Color{}
+	}
+	z := inter[2]
+
+	var col Color
+	if t.fourCorners {
+		col = MixColors(MixColors(t.p1.BaseBall.Color, t.p2.BaseBall.Color, inter[0]), MixColors(t.p3.BaseBall.Color, t.fourthColor, inter[0]), inter[1])
+	} else {
+		f1 := 1.0
+		if inter[1] < 1 {
+			f1 = inter[0] / (1 - inter[1])
+		}
+		col = MixColors(MixColors(t.p1.BaseBall.Color, t.p2.BaseBall.Color, f1), t.p3.BaseBall.Color, inter[1])
+	}
+	return true, z, t.dir, col
+}
+
+func (t *FlatTracer) GetBounds() Bounds {
+	return t.bounds
+}

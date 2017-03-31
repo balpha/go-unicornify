@@ -6,10 +6,7 @@ import (
 	"math"
 )
 
-var SCALE float64 // FIXME temp for non-linear bones, figure out how to handle it correctly
-
 func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shading bool, grass bool, parallelize bool, yCallback func(int)) (error, *image.RGBA) {
-
 	rand := pyrand.NewRandom()
 	err := rand.SeedFromHexString(hash)
 	if err != nil {
@@ -50,7 +47,9 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 
 	data.Randomize4(rand)
 
-	lightDirection := Point3d{rand.Random()*16 - 8, 10, rand.Random() * 3} // note this is based on projected, not original, coordinate system
+	lightDirection := Point3d{rand.Random()*16 - 8, 10, rand.Random() * 3}
+
+	lightDirection = Point3d{lightDirection.Z(), lightDirection.Y(), -lightDirection.X()}
 
 	// end randomization
 
@@ -65,6 +64,30 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 	}
 	uni := NewUnicorn(data)
 
+	if data.PoseKindIndex == 1 /*Walk*/ {
+		lowFront := uni.Legs[0].Hoof.Center
+		if uni.Legs[1].Hoof.Center.Y() > uni.Legs[0].Hoof.Center.Y() {
+			lowFront = uni.Legs[1].Hoof.Center
+		}
+		lowBack := uni.Legs[2].Hoof.Center
+		if uni.Legs[3].Hoof.Center.Y() > uni.Legs[2].Hoof.Center.Y() {
+			lowBack = uni.Legs[3].Hoof.Center
+		}
+		angle := math.Atan((lowBack.Y() - lowFront.Y()) / (lowBack.X() - lowFront.X()))
+		for b := range uni.BallSet() {
+			b.RotateAround(*uni.Shoulder, -angle, 2)
+		}
+	}
+
+	if xAngle < 0 {
+		for b := range uni.BallSet() {
+			b.RotateAround(*uni.Shoulder, yAngle, 1)
+			b.RotateAround(*uni.Shoulder, xAngle, 0)
+			b.RotateAround(*uni.Shoulder, -yAngle, 1)
+		}
+		xAngle = 0
+	}
+
 	fsize := float64(size)
 
 	// factor = 1 means center the head at (1/2, 1/3); factor = 0 means
@@ -73,6 +96,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 
 	lookAtPoint := uni.Shoulder.Center.Shifted(uni.Head.Center.Shifted(uni.Shoulder.Center.Neg()).Times(factor))
 	cp := lookAtPoint.Shifted(Point3d{0, 0, -3 * focalLength}).RotatedAround(uni.Head.Center, -xAngle, 0).RotatedAround(uni.Head.Center, -yAngle, 1)
+
 	wv := WorldView{
 		CameraPosition: cp,
 		LookAtPoint:    lookAtPoint,
@@ -99,15 +123,11 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 	if grass {
 		shins := make(map[Thing]int)
 		ymax := -99999.0
-		ymax2 := -99999.0
 		ymaxproj := -99999.0
 		for i, l := range uni.Legs {
 			shins[l.Shin] = i
 			if l.Hoof.Center.Y() > ymax {
-				ymax2 = ymax
 				ymax = l.Hoof.Center.Y()
-			} else if l.Hoof.Center.Y() > ymax2 {
-				ymax2 = l.Hoof.Center.Y()
 			}
 			ymaxproj = math.Max(ymaxproj, wv.ProjectBall(l.Hoof).Y())
 		}
@@ -119,60 +139,54 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 			grassdata.BladeHeightNear *= gf
 		}
 
-		isGroundHoof := func(h *Ball, s *Bone) bool {
-			r := s.GetTracer(wv).GetBounds() // this doesn't take scaling and shifting into account, but that's fine since we're only interested in a rough  aspect ratio
-			if r.Dx()*2 > r.Dy()*3 {
-				return false
-			}
-			if xAngle >= -3*DEGREE {
-				yground := math.Min(ymax-h.Radius, ymax2)
-				return yground-h.Center.Y() <= 0
-			} else {
-				hproj := wv.ProjectBall(h)
-				return math.Abs(ymaxproj-hproj.Y()) <= hproj.ProjectedRadius
-			}
+		var groundShadowImg *image.RGBA
+		if shading {
+			ground := NewSteak(
+				NewBall(-400, ymax+uni.Legs[0].Hoof.Radius+1, -400, 1, Color{128, 128, 128}),
+				NewBall(700, ymax+uni.Legs[0].Hoof.Radius+1, -400, 1, Color{128, 128, 128}),
+				NewBall(-400, ymax+uni.Legs[0].Hoof.Radius+1, 400, 1, Color{128, 128, 128}),
+			)
+			ground.FourCorners = true
+			ground.FourthColor = Color{128, 128, 128}
+			ground.Rounded = false
+			groundtr := ground.GetTracer(wv)
+			groundtr = NewShadowCastingTracer(groundtr, wv, uni, uni.Head.Center.Minus(lightDirection.Times(1000)), uni.Head.Center, 0, 32)
+			groundtr = scaleAndShift(groundtr)
+			groundShadowImg = image.NewRGBA(image.Rect(0, 0, size, size))
+
+			DrawTracerParallel(groundtr, groundShadowImg, nil, 8)
 		}
 
-		groundHoofs := make([]Leg, 0)
 		for _, l := range uni.Legs {
-			hoof := l.Hoof
-			hproj := wv.ProjectBall(hoof)
-			if !isGroundHoof(hoof, l.Shin) {
-				continue
-			}
-			var i int
-			for i = 0; i < len(groundHoofs) && wv.ProjectBall(groundHoofs[i].Hoof).Z() < hproj.Z(); i++ {
-			}
-			head := append(groundHoofs[:i], l)
-			groundHoofs = append(head, groundHoofs[i:]...)
-		}
-		for _, l := range groundHoofs {
 			h := l.Hoof
 			hproj := wv.ProjectBall(h)
 			gimg := image.NewRGBA(image.Rect(0, 0, size, size))
 			shiftedY := hproj.Y()*Scale + Shift[1]
-			grassdata.MinBottomY = shiftedY + hproj.ProjectedRadius*Scale
-			DrawGrass(gimg, grassdata, wv)
+			grassdata.MinBottomY = shiftedY + hproj.ProjectedRadius*Scale + (ymax-h.Center.Y())*hproj.ProjectedRadius/h.Radius*Scale
+			DrawGrass(gimg, grassdata, wv, groundShadowImg)
 			shinTracer := scaleAndShift(l.Shin.GetTracer(wv))
 			z := func(x, y float64) (bool, float64) {
 				ok, z, _, _ := shinTracer.Trace(x, y)
 				return ok, z - 1
 			}
-			tr := &ImageTracer{gimg, shinTracer.GetBounds(), z}
+			tr := &ImageTracer{img: gimg, bounds: shinTracer.GetBounds(), z: z}
 			grassTracers = append(grassTracers, tr)
 		}
 		grassdata.MinBottomY = 0
-		DrawGrass(img, grassdata, wv)
+		DrawGrass(img, grassdata, wv, groundShadowImg)
 	}
-
-	SCALE = Scale
 
 	tracer := uni.GetTracer(wv)
 
 	if shading {
-		lt := NewDirectionalLightTracer(lightDirection)
+		p := Point3d{0, 0, 1000}
+		pp := wv.ProjectBall(NewBallP(p, 0, Color{})).CenterCS
+		ldp := wv.ProjectBall(NewBallP(p.Shifted(lightDirection), 0, Color{})).CenterCS.Minus(pp)
+		lt := NewDirectionalLightTracer(ldp, 32, 80)
 		lt.Add(tracer)
-		tracer = lt
+
+		sc := NewShadowCastingTracer(lt, wv, uni, uni.Head.Center.Minus(lightDirection.Times(1000)), uni.Head.Center, 16, 16)
+		tracer = sc
 	}
 
 	tracer = scaleAndShift(tracer)

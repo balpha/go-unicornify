@@ -31,7 +31,7 @@ type BladeData struct {
 	ConstrainImage                                                 *image.RGBA
 }
 
-func DrawGrass(img *image.RGBA, d GrassData, wv WorldView) {
+func DrawGrass(img *image.RGBA, d GrassData, wv WorldView, shadowImage *image.RGBA) {
 	bd := BladeData{}
 	fsize := float64(img.Bounds().Dy())
 	for row := uint32(0); bd.BottomY-bd.Height <= fsize; row++ {
@@ -63,6 +63,13 @@ func DrawGrass(img *image.RGBA, d GrassData, wv WorldView) {
 			bd.CurveEnd = 0.5 + rand.Random()*0.5
 			bd.Color = MixColors(d.Color1, d.Color2, rand.Random())
 
+			if shadowImage != nil {
+				s := shadowImage.RGBAAt(round(bd.BottomX), round(bd.BottomY))
+				if s.A == 255 && s.R < 128 {
+					bd.Color = Darken(bd.Color, uint8(128-s.R))
+				}
+			}
+
 			DrawGrassBlade(img, bd)
 		}
 	}
@@ -87,7 +94,7 @@ func DrawGrassBlade(img *image.RGBA, d BladeData) {
 			if (d.CurveStrength < 0 && x >= left+(right-left)*2/3) || (d.CurveStrength >= 0 && x <= left+(right-left)*1/3) {
 				thiscol = Darken(thiscol, 10)
 			}
-			img.Set(x, y, thiscol)
+			img.SetRGBA(x, y, thiscol.ToRGBA())
 		}
 	}
 }

@@ -73,7 +73,7 @@ func (d BackgroundData) Draw(im *image.RGBA, shading bool) {
 	for y := 0; y < horizonPixels; y++ {
 		col := MixColors(d.Color("Sky", 60), d.Color("Sky", 10), float64(y)/fsize)
 		for x := 0; x < size; x++ {
-			im.Set(x, y, col)
+			im.SetRGBA(x, y, col.ToRGBA())
 		}
 	}
 
@@ -86,7 +86,7 @@ func (d BackgroundData) Draw(im *image.RGBA, shading bool) {
 		col := MixColors(land1, land2, float64(x)/fsize)
 
 		for y := horizonPixels; y < size; y++ {
-			im.Set(x, y, col)
+			im.SetRGBA(x, y, col.ToRGBA())
 		}
 	}
 
@@ -160,9 +160,9 @@ func drawCloud(img *image.RGBA, x, y, size1, size2 float64, col Color, shaded bo
 			if shaded {
 				dy := float64(py - (yi - size1i - 1))
 				thiscolr := CircleShadingRGBA(0, dy, size1, col.ToRGBA(), cp)
-				img.Set(px, py, thiscolr)
+				img.SetRGBA(px, py, thiscolr)
 			} else {
-				img.Set(px, py, thiscol)
+				img.SetRGBA(px, py, thiscol.ToRGBA())
 			}
 
 		}

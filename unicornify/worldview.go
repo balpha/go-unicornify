@@ -77,29 +77,18 @@ func (wv WorldView) ProjectBall(b *Ball) BallProjection {
 			BaseBall:          *b,
 		}
 		projection.CenterCS = projection.ProjectedCenterCS.Times(cam2c.Length() / projection.ProjectedCenterCS.Length())
-
-		count := 0.0
-		max := 0.0
-		for dx := -1.0; dx <= 1; dx += 1 {
-			for dy := -1.0; dy <= 1; dy += 1 {
-				for dz := -1.0; dz <= 1; dz += 1 {
-					shift := Point3d{dx, dy, dz}
-					if shift.Length() == 0 {
-						continue
-					}
-					shift = shift.Times(b.Radius / shift.Length())
-					ok, intf := IntersectionOfPlaneAndLine(wv.CameraPosition.Shifted(n.Times(wv.FocalLength)), wv.ux, wv.uy, wv.CameraPosition, b.Center.Shifted(shift).Minus(wv.CameraPosition))
-					if ok {
-						count++
-						rp := Point3d{intf[0], intf[1], 0}
-						max = math.Max(max, math.Sqrt(sqr(rp[0]-projection.X())+sqr(rp[1]-projection.Y())))
-					}
-				}
-			}
-
+		if b.Radius == 0 {
+			return projection
 		}
 
-		projection.ProjectedRadius = max
+		closestToCam := wv.CameraPosition.Shifted(cam2c.Times(1 - b.Radius/cam2c.Length()))
+		secondPoint := closestToCam.Shifted(wv.uy.Times(b.Radius))
+
+		p1 := wv.ProjectBall(NewBallP(closestToCam, 0, Color{}))
+		p2 := wv.ProjectBall(NewBallP(secondPoint, 0, Color{}))
+
+		projection.ProjectedRadius = p1.ProjectedCenterCS.Minus(p2.ProjectedCenterCS).Length()
+
 		return projection
 
 	}

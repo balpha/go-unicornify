@@ -1,7 +1,6 @@
 package unicornify
 
 import (
-	"image"
 	"math"
 )
 
@@ -55,12 +54,7 @@ func (b *Bone) GetTracer(wv WorldView) Tracer {
 		length := v.Length()
 		vx, vy := CrossAxes(v.Times(1 / length))
 
-		bounding := NewBoneTracer(proj1, proj2).GetBounds()
-		parts := bounding.Dy()
-		if bounding.Dx() > bounding.Dy() {
-			parts = bounding.Dx()
-		}
-		parts = roundUp(float64(parts) * SCALE)
+		parts := 255
 
 		calcBall := func(factor float64) BallProjection {
 			col := MixColors(c1, c2, factor)
@@ -115,14 +109,14 @@ func (b *Bone) GetTracer(wv WorldView) Tracer {
 }
 
 type BoneTracer struct {
-	xmin, xmax, ymin, ymax         int
-	w1, w2, w3, a1, a2, a3, ra, dr float64
-	c2, c4, c6, c8, c9, c11, c14   float64
-	b1, b2                         BallProjection
+	w1, w2, w3, a1, a2, a3, ra, dr    float64
+	c2, c4, c6, c8, c9, c11, c14, c2i float64
+	b1, b2                            BallProjection
+	bounds                            Bounds
 }
 
-func (t *BoneTracer) GetBounds() image.Rectangle {
-	return image.Rect(t.xmin, t.ymin, t.xmax, t.ymax)
+func (t *BoneTracer) GetBounds() Bounds {
+	return t.bounds
 }
 
 func (t *BoneTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
@@ -144,13 +138,13 @@ func (t *BoneTracer) traceImpl(x, y float64, backside bool) (bool, float64, Poin
 			f = 0
 		}
 	} else {
-		c7 := c3 / t.c2
-		c10 := c5 / t.c2
-		c12 := sqr(c7)/4 - t.c9
+		c7 := c3 * t.c2i
+		c10 := c5 * t.c2i
+		c12i := 1 / (sqr(c7)/4 - t.c9)
 		c13 := c7*t.c8/2 - c10
 
-		pz := c13 / c12
-		qz := t.c14 / c12
+		pz := c13 * c12i
+		qz := t.c14 * c12i
 		discz := sqr(pz)/4 - qz
 
 		if discz < 0 {
@@ -250,13 +244,7 @@ func NewBoneTracer(b1, b2 BallProjection) *BoneTracer {
 	cx1, cy1, cz1, r1 := b1.CenterCS.X(), b1.CenterCS.Y(), b1.CenterCS.Z(), b1.BaseBall.Radius
 	cx2, cy2, cz2, r2 := b2.CenterCS.X(), b2.CenterCS.Y(), b2.CenterCS.Z(), b2.BaseBall.Radius
 
-	pcx1, pcy1, pr1 := b1.X(), b1.Y(), b1.ProjectedRadius
-	pcx2, pcy2, pr2 := b2.X(), b2.Y(), b2.ProjectedRadius
-
-	t.xmin = roundDown(math.Min(pcx1-pr1, pcx2-pr2))
-	t.xmax = roundUp(math.Max(pcx1+pr1, pcx2+pr2))
-	t.ymin = roundDown(math.Min(pcy1-pr1, pcy2-pr2))
-	t.ymax = roundUp(math.Max(pcy1+pr1, pcy2+pr2))
+	t.bounds = RenderingBoundsForBalls(b1, b2)
 
 	t.w1 = float64(cx2 - cx1)
 	t.w2 = float64(cy2 - cy1)
@@ -270,6 +258,10 @@ func NewBoneTracer(b1, b2 BallProjection) *BoneTracer {
 	t.dr = float64(r2 - r1)
 
 	t.c2 = -sqr(t.dr) + sqr(t.w1) + sqr(t.w2) + sqr(t.w3)
+	if t.c2 != 0 {
+		t.c2i = 1 / t.c2
+	}
+
 	t.c4 = -2*t.ra*t.dr + 2*(t.a1*t.w1+t.a2*t.w2+t.a3*t.w3)
 	t.c6 = -sqr(t.ra) + sqr(t.a1) + sqr(t.a2) + sqr(t.a3)
 	t.c8 = t.c4 / t.c2

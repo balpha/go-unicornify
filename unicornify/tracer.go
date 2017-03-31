@@ -97,7 +97,7 @@ func (is TraceIntervals) Invert() TraceIntervals {
 			},
 		}
 	}
-	result := make(TraceIntervals, len(is) + 1)
+	result := make(TraceIntervals, len(is)+1)
 	prev := TraceResult{math.Inf(-1), is[0].Start.Direction, is[0].Start.Color}
 	for index, i := range is {
 		n := TraceInterval{
@@ -117,7 +117,7 @@ func (is TraceIntervals) Invert() TraceIntervals {
 type Tracer interface {
 	Trace(x, y float64) (bool, float64, Point3d, Color)
 	TraceDeep(x, y float64) (bool, TraceIntervals)
-	GetBounds() image.Rectangle
+	GetBounds() Bounds
 }
 
 func DeepifyTrace(t Tracer, x, y float64) (bool, TraceIntervals) {
@@ -144,12 +144,12 @@ type WrappingTracer interface {
 }
 
 func DrawTracerPartial(t Tracer, img *image.RGBA, yCallback func(int), bounds image.Rectangle, c chan bool) {
-	r := bounds.Intersect(t.GetBounds())
+	r := bounds.Intersect(t.GetBounds().ToRect())
 	for y := r.Min.Y; y <= r.Max.Y; y++ {
 		for x := r.Min.X; x <= r.Max.X; x++ {
 			any, _, _, col := t.Trace(float64(x), float64(y))
 			if any {
-				img.Set(x, y, col)
+				img.SetRGBA(x, y, col.ToRGBA())
 			}
 		}
 		if yCallback != nil {
@@ -177,7 +177,9 @@ func DrawTracerParallel(t Tracer, img *image.RGBA, yCallback func(int), partsRoo
 	for partsLeft > 0 {
 		<-c
 		partsLeft--
-		yCallback(full.Dy() * (parts - partsLeft) / parts)
+		if yCallback != nil {
+			yCallback(full.Dy() * (parts - partsLeft) / parts)
+		}
 	}
 }
 
@@ -185,7 +187,7 @@ func DrawTracerParallel(t Tracer, img *image.RGBA, yCallback func(int), partsRoo
 
 type GroupTracer struct {
 	tracers       []Tracer
-	bounds        image.Rectangle
+	bounds        Bounds
 	boundsCurrent bool
 }
 
@@ -198,11 +200,8 @@ func (gt *GroupTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
 	var minz float64 = 0.0
 	var col Color = Black
 	var dir Point3d
-	xi := int(x)
-	yi := int(y)
 	for _, t := range gt.tracers {
-		tr := t.GetBounds()
-		if xi < tr.Min.X || xi >= tr.Max.X+1 || yi < tr.Min.Y || yi >= tr.Max.Y+1 {
+		if !t.GetBounds().ContainsXY(x, y) {
 			continue
 		}
 		ok, z, thisdir, thiscol := t.Trace(x, y)
@@ -221,11 +220,8 @@ func (gt *GroupTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
 func (t *GroupTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 	result := TraceIntervals{}
 	any := false
-	xi := int(x)
-	yi := int(y)
 	for _, t := range t.tracers {
-		tr := t.GetBounds()
-		if xi < tr.Min.X || xi >= tr.Max.X+1 || yi < tr.Min.Y || yi >= tr.Max.Y+1 {
+		if !t.GetBounds().ContainsXY(x, y) {
 			continue
 		}
 		ok, is := t.TraceDeep(x, y)
@@ -237,10 +233,10 @@ func (t *GroupTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 	return any, result
 }
 
-func (gt *GroupTracer) GetBounds() image.Rectangle {
+func (gt *GroupTracer) GetBounds() Bounds {
 	if !gt.boundsCurrent {
 		if len(gt.tracers) == 0 {
-			gt.bounds = image.Rect(-10, -10, -10, -10)
+			gt.bounds = EmptyBounds
 		} else {
 			r := gt.tracers[0].GetBounds()
 			for _, t := range gt.tracers[1:] {
@@ -264,23 +260,21 @@ func (gt *GroupTracer) Add(ts ...Tracer) {
 
 type ImageTracer struct {
 	img    *image.RGBA
-	bounds image.Rectangle
+	bounds Bounds
 	z      func(x, y float64) (bool, float64)
 }
 
 var NoDirection = Point3d{0, 0, 0}
 
 func (t *ImageTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
-	tr := t.bounds
-	xi := int(x)
-	yi := int(y)
-	if xi < tr.Min.X || xi >= tr.Max.X+1 || yi < tr.Min.Y || yi >= tr.Max.Y+1 {
+	if !t.bounds.ContainsXY(x, y) {
 		return false, 0, NoDirection, Black
 	}
-	c := t.img.At(xi, yi).(color.RGBA)
+	c := t.img.At(round(x), round(y)).(color.RGBA)
 	if c.A < 255 {
 		return false, 0, NoDirection, Black
 	}
+
 	ok, z := t.z(x, y)
 
 	return ok, z, NoDirection, Color{c.R, c.G, c.B}
@@ -290,7 +284,7 @@ func (t *ImageTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 	return DeepifyTrace(t, x, y)
 }
 
-func (t *ImageTracer) GetBounds() image.Rectangle {
+func (t *ImageTracer) GetBounds() Bounds {
 	return t.bounds
 }
 
@@ -299,6 +293,7 @@ func (t *ImageTracer) GetBounds() image.Rectangle {
 type DirectionalLightTracer struct {
 	GroupTracer
 	LightDirectionUnit Point3d
+	Lighten, Darken    float64
 }
 
 func (t *DirectionalLightTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
@@ -315,9 +310,9 @@ func (t *DirectionalLightTracer) Trace(x, y float64) (bool, float64, Point3d, Co
 	sp := unit.ScalarProd(t.LightDirectionUnit)
 
 	if sp >= 0 {
-		col = Darken(col, uint8(sp*96))
+		col = Darken(col, uint8(sp*t.Darken))
 	} else {
-		col = Lighten(col, uint8(-sp*48))
+		col = Lighten(col, uint8(-sp*t.Lighten))
 	}
 
 	return ok, z, dir, col
@@ -338,8 +333,8 @@ func (t *DirectionalLightTracer) SetLightDirection(dir Point3d) {
 	t.LightDirectionUnit = dir
 }
 
-func NewDirectionalLightTracer(lightDirection Point3d) *DirectionalLightTracer {
-	result := &DirectionalLightTracer{}
+func NewDirectionalLightTracer(lightDirection Point3d, lighten, darken float64) *DirectionalLightTracer {
+	result := &DirectionalLightTracer{Lighten: lighten, Darken: darken}
 	result.SetLightDirection(lightDirection)
 	return result
 }
@@ -399,7 +394,7 @@ func (t *PointLightTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 	return DeepifyTrace(t, x, y)
 }
 
-func (t *PointLightTracer) GetBounds() image.Rectangle {
+func (t *PointLightTracer) GetBounds() Bounds {
 	return t.SourceTracer.GetBounds()
 }
 
@@ -427,7 +422,7 @@ func (t *DifferenceTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 	return len(res) > 0, res
 }
 
-func (t *DifferenceTracer) GetBounds() image.Rectangle {
+func (t *DifferenceTracer) GetBounds() Bounds {
 	return t.Base.GetBounds()
 }
 
@@ -443,7 +438,7 @@ func NewDifferenceTracer(base, subtrahend Tracer) *DifferenceTracer {
 
 type IntersectionTracer struct {
 	Base, Other Tracer
-	bounds      image.Rectangle
+	bounds      Bounds
 }
 
 func (t *IntersectionTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
@@ -456,7 +451,7 @@ func (t *IntersectionTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 	return len(res) > 0, res
 }
 
-func (t *IntersectionTracer) GetBounds() image.Rectangle {
+func (t *IntersectionTracer) GetBounds() Bounds {
 	return t.bounds
 }
 
@@ -473,25 +468,31 @@ func NewIntersectionTracer(base, other Tracer) *IntersectionTracer {
 type ScalingTracer struct {
 	Source Tracer
 	Scale  float64
-	bounds image.Rectangle
+	bounds Bounds
 }
 
 func (t *ScalingTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 	return t.Source.TraceDeep(x/t.Scale, y/t.Scale) // TODO: scale the result?
 }
 
-func (t *ScalingTracer) GetBounds() image.Rectangle {
+func (t *ScalingTracer) GetBounds() Bounds {
 	return t.bounds
 }
 
 func (t *ScalingTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
-	return t.Source.Trace(x/t.Scale, y/t.Scale) // TODO: scale the result?
+	ok, z, dir, col := t.Source.Trace(x/t.Scale, y/t.Scale) // TODO: scale the result?
+	return ok, z * t.Scale, dir, col
 }
 
 func NewScalingTracer(source Tracer, scale float64) *ScalingTracer {
 	b := source.GetBounds()
-	bounds := rectFromFloats(float64(b.Min.X)*scale, float64(b.Min.Y)*scale, float64(b.Max.X)*scale, float64(b.Max.Y)*scale)
-	return &ScalingTracer{source, scale, bounds}
+	if !b.Empty {
+		b.XMin *= scale
+		b.XMax *= scale
+		b.YMin *= scale
+		b.YMax *= scale
+	}
+	return &ScalingTracer{source, scale, b}
 }
 
 // ------- TranslatingTracer -------
@@ -499,14 +500,14 @@ func NewScalingTracer(source Tracer, scale float64) *ScalingTracer {
 type TranslatingTracer struct {
 	Source         Tracer
 	ShiftX, ShiftY float64
-	bounds         image.Rectangle
+	bounds         Bounds
 }
 
 func (t *TranslatingTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 	return t.Source.TraceDeep(x-t.ShiftX, y-t.ShiftY)
 }
 
-func (t *TranslatingTracer) GetBounds() image.Rectangle {
+func (t *TranslatingTracer) GetBounds() Bounds {
 	return t.bounds
 }
 
@@ -516,6 +517,83 @@ func (t *TranslatingTracer) Trace(x, y float64) (bool, float64, Point3d, Color) 
 
 func NewTranslatingTracer(source Tracer, dx, dy float64) *TranslatingTracer {
 	b := source.GetBounds()
-	bounds := rectFromFloats(float64(b.Min.X)+dx, float64(b.Min.Y)+dy, float64(b.Max.X)+dx, float64(b.Max.Y)+dy)
-	return &TranslatingTracer{source, dx, dy, bounds}
+	if !b.Empty {
+		b.XMin += dx
+		b.XMax += dx
+		b.YMin += dy
+		b.YMax += dy
+	}
+	return &TranslatingTracer{source, dx, dy, b}
+}
+
+// ------- ShadowCastingTracer -------
+
+type ShadowCastingTracer struct {
+	WorldView, LightView      WorldView
+	SourceTracer, LightTracer Tracer
+	LightProjection           BallProjection
+	Lighten, Darken           float64
+}
+
+func (t *ShadowCastingTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
+	ok, z, dir, col := t.SourceTracer.Trace(x, y)
+	if !ok {
+		return ok, z, dir, col
+	}
+	origPoint := t.WorldView.UnProject(Point3d{x, y, z})
+	lp := t.LightView.ProjectBall(NewBallP(origPoint, 0, Color{}))
+
+	lok, lz, ldir, _ := t.LightTracer.Trace(lp.X(), lp.Y())
+
+	seeing := !lok || lz >= origPoint.Minus(t.LightView.CameraPosition).Length()-0.01
+
+	if !seeing {
+		col = Darken(col, uint8(t.Darken))
+	} else {
+		rayUnit := Point3d{lp.X(), lp.Y(), t.LightView.FocalLength}.Unit()
+		sp := ldir.Unit().ScalarProd(rayUnit)
+
+		if sp > 0 { // Given a completely realistic world with no rounding errors, this wouldn't happen.
+			col = Darken(col, uint8((1-sp)*t.Darken))
+		} else if sp < 0 {
+			sp = -sp
+			if sp < 0.5 {
+				col = Darken(col, uint8((0.5-sp)*t.Darken*2))
+			} else {
+				col = Lighten(col, uint8((sp-0.5)*t.Lighten*2))
+			}
+
+		}
+	}
+	return ok, z, dir, col
+}
+
+func (t *ShadowCastingTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
+	return DeepifyTrace(t, x, y)
+}
+
+func (t *ShadowCastingTracer) GetBounds() Bounds {
+	return t.SourceTracer.GetBounds()
+}
+
+func NewShadowCastingTracer(source Tracer, worldView WorldView, shadowCaster Thing, lightPos, lightTarget Point3d, lighten, darken float64) *ShadowCastingTracer {
+	lightView := WorldView{
+		CameraPosition: lightPos,
+		LookAtPoint:    lightTarget,
+		FocalLength:    1, // doesn't matter
+	}
+	lightView.Init()
+	lightTracer := shadowCaster.GetTracer(lightView)
+	lightProjection := worldView.ProjectBall(NewBallP(lightPos, 1, Color{}))
+
+	result := &ShadowCastingTracer{
+		SourceTracer:    source,
+		LightTracer:     lightTracer,
+		WorldView:       worldView,
+		LightView:       lightView,
+		LightProjection: lightProjection,
+		Lighten:         lighten,
+		Darken:          darken,
+	}
+	return result
 }
