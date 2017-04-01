@@ -1,7 +1,6 @@
 package unicornify
 
 import (
-	"image"
 )
 
 type Thing interface {
@@ -23,20 +22,14 @@ func (f *Figure) Project(wv WorldView) {
 	}
 }
 
-type FigureTracer struct {
-	*GroupTracer
-	f  *Figure
-	r  image.Rectangle
-	wv WorldView
-}
-
 func (f *Figure) GetTracer(wv WorldView) Tracer {
 	gt := NewGroupTracer()
 
 	for _, th := range f.things {
 		gt.Add(th.GetTracer(wv))
 	}
-	return &FigureTracer{GroupTracer: gt, f: f, wv: wv}
+	gt.SubdivideAndSort()
+	return gt
 }
 
 func (f *Figure) Scale(factor float64) {

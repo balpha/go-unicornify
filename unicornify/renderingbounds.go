@@ -73,6 +73,10 @@ func (b Bounds) ContainsXY(x, y float64) bool {
 	return !b.Empty && x >= b.XMin && x <= b.XMax && y >= b.YMin && y <= b.YMax
 }
 
+func (b Bounds) ContainsPointsInFrontOfZ(z float64) bool {
+	return !b.Empty && z > b.ZMin
+}
+
 func (b Bounds) Dx() float64 {
 	if b.Empty {
 		return 0
@@ -90,4 +94,14 @@ func (b Bounds) ToRect() image.Rectangle {
 		return image.Rect(0, 0, 0, 0)
 	}
 	return image.Rect(roundDown(b.XMin), roundDown(b.YMin), roundUp(b.XMax), roundUp(b.YMax))
+}
+func (b Bounds) MidPoint () Point3d {
+	if b.Empty {
+		return Point3d{}
+	}
+	return Point3d{
+		(b.XMax + b.XMin)/2,
+		(b.YMax + b.YMin)/2,
+		(b.ZMax + b.ZMin)/2,
+	}
 }

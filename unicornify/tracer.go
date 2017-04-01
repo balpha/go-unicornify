@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"math"
+	"sort"
 )
 
 type TraceResult struct {
@@ -201,7 +202,11 @@ func (gt *GroupTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
 	var col Color = Black
 	var dir Point3d
 	for _, t := range gt.tracers {
-		if !t.GetBounds().ContainsXY(x, y) {
+		b := t.GetBounds()
+		if !b.ContainsXY(x, y) {
+			continue
+		}
+		if any && !b.ContainsPointsInFrontOfZ(minz) {
 			continue
 		}
 		ok, z, thisdir, thiscol := t.Trace(x, y)
@@ -255,6 +260,65 @@ func (gt *GroupTracer) Add(ts ...Tracer) {
 	}
 	gt.boundsCurrent = false
 }
+
+func (gt *GroupTracer) SubdivideAndSort() {
+	const n = 2
+	const min = 5
+	
+	subs := make([]*GroupTracer, n*n)
+	b := gt.GetBounds()
+	if b.Empty {
+		return
+	}
+	count := 0
+	for _, t:= range gt.tracers {
+		mid := t.GetBounds().MidPoint()
+		bucketx := round(float64(n-1)*(mid.X()-b.XMin)/b.Dx())
+		buckety := round(float64(n-1)*(mid.Y()-b.YMin)/b.Dy())
+		bucket := bucketx+n*buckety
+		sub := subs[bucket]
+		if sub == nil {
+			sub = NewGroupTracer()
+			subs[bucket] = sub
+			count++
+		}
+		sub.Add(t)
+	}
+	if count == 1 {
+		sort.Sort(gt)
+		return
+	}
+	gt.tracers = make([]Tracer, 0, count)
+	for _, sub := range subs {
+		if sub == nil {
+			continue
+		}
+		if len(sub.tracers) < min {
+			for _, sst := range sub.tracers {
+				gt.Add(sst)
+				//_=sst
+			}
+		} else {
+			sub.SubdivideAndSort()
+			gt.Add(sub)
+		}
+	}
+	sort.Sort(gt)
+}
+
+func (gt *GroupTracer) Len() int {
+	return len(gt.tracers)
+}
+
+func (gt *GroupTracer) Less(i, j int) bool {
+	return gt.tracers[i].GetBounds().ZMin < gt.tracers[j].GetBounds().ZMin
+}
+
+func (gt *GroupTracer) Swap(i, j int) {
+	gt.tracers[i], gt.tracers[j] = gt.tracers[j], gt.tracers[i]
+}
+
+
 
 // ------- ImageTracer -------
 
