@@ -95,11 +95,11 @@ func (b Bounds) ToRect() image.Rectangle {
 	}
 	return image.Rect(roundDown(b.XMin), roundDown(b.YMin), roundUp(b.XMax), roundUp(b.YMax))
 }
-func (b Bounds) MidPoint() Point3d {
+func (b Bounds) MidPoint() Vector {
 	if b.Empty {
-		return Point3d{}
+		return Vector{}
 	}
-	return Point3d{
+	return Vector{
 		(b.XMax + b.XMin) / 2,
 		(b.YMax + b.YMin) / 2,
 		(b.ZMax + b.ZMin) / 2,

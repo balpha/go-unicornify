@@ -1,15 +1,15 @@
 package unicornify
 
 type Ball struct {
-	Center Point3d
+	Center Vector
 	Radius float64
 	Color  Color
 }
 
 func NewBall(x, y, z, r float64, c Color) *Ball {
-	return NewBallP(Point3d{x, y, z}, r, c)
+	return NewBallP(Vector{x, y, z}, r, c)
 }
-func NewBallP(center Point3d, r float64, c Color) *Ball {
+func NewBallP(center Vector, r float64, c Color) *Ball {
 	return &Ball{
 		Center: center,
 		Radius: r,
@@ -58,9 +58,9 @@ func (b *Ball) MoveToBone(bone Bone) {
 }
 
 type BallProjection struct {
-	CenterCS          Point3d // the center in camera space (camera at (0,0,0), Z axis in view direction)
-	ProjectedCenterCS Point3d // the projection in camera space (note that by definition, Z will always be = focal length)
-	ProjectedCenterOS Point3d // the projection in original space
+	CenterCS          Vector // the center in camera space (camera at (0,0,0), Z axis in view direction)
+	ProjectedCenterCS Vector // the projection in camera space (note that by definition, Z will always be = focal length)
+	ProjectedCenterOS Vector // the projection in original space
 	ProjectedRadius   float64
 	WorldView         WorldView
 	BaseBall          Ball // yeah sorry, but that's exactly what it is (btw, note this isn't a pointer)

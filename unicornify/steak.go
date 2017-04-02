@@ -48,7 +48,7 @@ func NewSteakTracer(wv WorldView, b1, b2, b3 *Ball, fourCorners bool, fourthColo
 	cross := w12.CrossProd(w13).Unit().Times(b1.Radius)
 	top1 := c1.Shifted(cross) // not necessarily on the top in any non-arbitrary way
 	bottom1 := c1.Shifted(cross.Neg())
-	add := func(tri bool, b1, b2, b3 *Ball, fourthColor Color, roughDirection Point3d) {
+	add := func(tri bool, b1, b2, b3 *Ball, fourthColor Color, roughDirection Vector) {
 		ft := NewFlatTracer(wv, b1, b2, b3, !tri, fourthColor, roughDirection)
 		t.bounds = t.bounds.Union(ft.GetBounds())
 		t.Flats = append(t.Flats, ft)
@@ -59,7 +59,7 @@ func NewSteakTracer(wv WorldView, b1, b2, b3 *Ball, fourCorners bool, fourthColo
 	add(false, NewBallP(top1, 0, col1), NewBallP(bottom1, 0, col1), NewBallP(top1.Shifted(w12), 0, col2), col2, w13.Neg())
 	add(false, NewBallP(top1, 0, col1), NewBallP(bottom1, 0, col1), NewBallP(top1.Shifted(w13), 0, col3), col3, w12.Neg())
 
-	var w14 Point3d
+	var w14 Vector
 
 	if !fourCorners {
 		add(false, NewBallP(top1.Shifted(w12), 0, col2), NewBallP(bottom1.Shifted(w12), 0, col2), NewBallP(top1.Shifted(w13), 0, col3), col3, w12)
@@ -93,10 +93,10 @@ func NewSteakTracer(wv WorldView, b1, b2, b3 *Ball, fourCorners bool, fourthColo
 }
 
 func (t *SteakTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
-	ray := Point3d{x, y, t.wv.FocalLength}.Unit()
+	ray := Vector{x, y, t.wv.FocalLength}.Unit()
 
 	var minz, maxz float64
-	var mindir, maxdir Point3d
+	var mindir, maxdir Vector
 	var mincol, maxcol Color
 	any := false
 
@@ -128,7 +128,7 @@ func (t *SteakTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 	}
 }
 
-func (t *SteakTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
+func (t *SteakTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
 	return UnDeepifyTrace(t, x, y)
 }
 

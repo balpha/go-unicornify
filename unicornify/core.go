@@ -7,83 +7,83 @@ import (
 const pi = math.Pi
 const deg360 = 2 * pi
 
-type Point3d [3]float64
+type Vector [3]float64
 
 type Point2d [2]float64
 
-func (p Point3d) X() float64 {
+func (p Vector) X() float64 {
 	return p[0]
 }
 
-func (p Point3d) Y() float64 {
+func (p Vector) Y() float64 {
 	return p[1]
 }
 
-func (p Point3d) Z() float64 {
+func (p Vector) Z() float64 {
 	return p[2]
 }
 
-func (p Point3d) Shifted(delta Point3d) Point3d {
-	return Point3d{
+func (p Vector) Shifted(delta Vector) Vector {
+	return Vector{
 		p[0] + delta[0],
 		p[1] + delta[1],
 		p[2] + delta[2],
 	}
 }
 
-func (p Point3d) Length() float64 {
+func (p Vector) Length() float64 {
 	return math.Sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2])
 }
 
-func (p Point3d) Times(v float64) Point3d {
-	return Point3d{
+func (p Vector) Times(v float64) Vector {
+	return Vector{
 		v * p[0],
 		v * p[1],
 		v * p[2],
 	}
 }
 
-func (p Point3d) Minus(other Point3d) Point3d {
+func (p Vector) Minus(other Vector) Vector {
 	return p.Shifted(other.Neg())
 }
 
-func (p Point3d) ScalarProd(v Point3d) float64 {
+func (p Vector) ScalarProd(v Vector) float64 {
 	return p[0]*v[0] + p[1]*v[1] + p[2]*v[2]
 }
 
-func (p Point3d) Unit() Point3d {
+func (p Vector) Unit() Vector {
 	l := 1 / p.Length()
-	return Point3d{p[0] * l, p[1] * l, p[2] * l}
+	return Vector{p[0] * l, p[1] * l, p[2] * l}
 }
 
-func (a Point3d) CrossProd(b Point3d) Point3d {
-	return Point3d{
+func (a Vector) CrossProd(b Vector) Vector {
+	return Vector{
 		a.Y()*b.Z() - a.Z()*b.Y(),
 		a.Z()*b.X() - a.X()*b.Z(),
 		a.X()*b.Y() - a.Y()*b.X(),
 	}
 }
 
-func (p Point3d) Neg() Point3d {
-	return Point3d{
+func (p Vector) Neg() Vector {
+	return Vector{
 		-p[0],
 		-p[1],
 		-p[2],
 	}
 }
 
-func (p Point3d) DiscardZ() Point2d {
+func (p Vector) DiscardZ() Point2d {
 	return Point2d{
 		p[0],
 		p[1],
 	}
 }
 
-func (p Point3d) Decompose() (x, y, z float64) {
+func (p Vector) Decompose() (x, y, z float64) {
 	return p[0], p[1], p[2]
 }
 
-func (p Point3d) RotatedAround(other Point3d, angle float64, axis byte) Point3d {
+func (p Vector) RotatedAround(other Vector, angle float64, axis byte) Vector {
 	var swap, reverse [3]byte
 	switch axis {
 	case 0:
@@ -106,7 +106,7 @@ func (p Point3d) RotatedAround(other Point3d, angle float64, axis byte) Point3d 
 	rotated[1] = x1*math.Sin(angle) + y1*math.Cos(angle)
 	rotated[2] = z1
 
-	return Point3d{rotated[reverse[0]], rotated[reverse[1]], rotated[reverse[2]]}.Shifted(other)
+	return Vector{rotated[reverse[0]], rotated[reverse[1]], rotated[reverse[2]]}.Shifted(other)
 }
 
 func MixBytes(b1, b2 byte, f float64) byte {
@@ -117,7 +117,7 @@ func MixFloats(f1, f2, f float64) float64 {
 	return f1 + f*(f2-f1)
 }
 
-func intersectionOfPlaneAndLineReadable(p0, ep1, ep2, l0, el Point3d) (ok bool, intersection Point3d) {
+func intersectionOfPlaneAndLineReadable(p0, ep1, ep2, l0, el Vector) (ok bool, intersection Vector) {
 	A := [3][3]float64{
 		[3]float64{ep1.X(), ep2.X(), -el.X()},
 		[3]float64{ep1.Y(), ep2.Y(), -el.Y()},
@@ -141,7 +141,7 @@ func intersectionOfPlaneAndLineReadable(p0, ep1, ep2, l0, el Point3d) (ok bool, 
 
 		}
 		if A[i][i] == 0 {
-			return false, Point3d{}
+			return false, Vector{}
 		}
 		for k := i + 1; k <= 2; k++ {
 			A[k][i] = A[k][i] / A[i][i]
@@ -151,7 +151,7 @@ func intersectionOfPlaneAndLineReadable(p0, ep1, ep2, l0, el Point3d) (ok bool, 
 		}
 	}
 
-	y := Point3d{}
+	y := Vector{}
 	for i := 0; i <= 2; i++ {
 		y[i] = b[i]
 		for k := 0; k <= i-1; k++ {
@@ -159,7 +159,7 @@ func intersectionOfPlaneAndLineReadable(p0, ep1, ep2, l0, el Point3d) (ok bool, 
 		}
 	}
 
-	x := Point3d{}
+	x := Vector{}
 	for i := 2; i >= 0; i-- {
 		x[i] = y[i]
 		for k := i + 1; k <= 2; k++ {
@@ -171,7 +171,7 @@ func intersectionOfPlaneAndLineReadable(p0, ep1, ep2, l0, el Point3d) (ok bool, 
 	return true, x
 }
 
-func IntersectionOfPlaneAndLine(p0, ep1, ep2, l0, el Point3d) (ok bool, intersection Point3d) {
+func IntersectionOfPlaneAndLine(p0, ep1, ep2, l0, el Vector) (ok bool, intersection Vector) {
 	A00, A01, A02, A10, A11, A12, A20, A21, A22 := ep1.X(), ep2.X(), -el.X(), ep1.Y(), ep2.Y(), -el.Y(), ep1.Z(), ep2.Z(), -el.Z()
 	b0, b1, b2 := l0.Minus(p0).Decompose()
 	// need to solve Ax = b where x = (fp1, fp2, fl)
@@ -193,7 +193,7 @@ func IntersectionOfPlaneAndLine(p0, ep1, ep2, l0, el Point3d) (ok bool, intersec
 
 			}
 			if A[i][i] == 0 {
-				return false, Point3d{}
+				return false, Vector{}
 			}
 			for k := i + 1; k <= 2; k++ {
 				A[k][i] = A[k][i] / A[i][i]
@@ -217,7 +217,7 @@ func IntersectionOfPlaneAndLine(p0, ep1, ep2, l0, el Point3d) (ok bool, intersec
 		}
 	}
 	if A00 == 0 {
-		return false, Point3d{}
+		return false, Vector{}
 	}
 	//   k=1
 	A10 /= A00
@@ -240,7 +240,7 @@ func IntersectionOfPlaneAndLine(p0, ep1, ep2, l0, el Point3d) (ok bool, intersec
 		b1, b2 = b2, b1
 	}
 	if A11 == 0 {
-		return false, Point3d{}
+		return false, Vector{}
 	}
 	//   k=2
 	A21 /= A11
@@ -249,12 +249,12 @@ func IntersectionOfPlaneAndLine(p0, ep1, ep2, l0, el Point3d) (ok bool, intersec
 
 	//i=2
 	if A22 == 0 {
-		return false, Point3d{}
+		return false, Vector{}
 	}
 
 	// ---------------------------------------------
 
-	/*y := Point3d{}
+	/*y := Vector{}
 	for i := 0; i <= 2; i++ {
 		y[i] = b[i]
 		for k := 0; k <= i-1; k++ {
@@ -267,7 +267,7 @@ func IntersectionOfPlaneAndLine(p0, ep1, ep2, l0, el Point3d) (ok bool, intersec
 
 	// -------------------------------------
 
-	/*x := Point3d{}
+	/*x := Vector{}
 	for i := 2; i >= 0; i-- {
 		x[i] = y[i]
 		for k := i + 1; k <= 2; k++ {
@@ -280,5 +280,5 @@ func IntersectionOfPlaneAndLine(p0, ep1, ep2, l0, el Point3d) (ok bool, intersec
 	b1 = (b1 - A12*b2) / A11
 	b0 = (b0 - (A01*b1 + A02*b2)) / A00
 
-	return true, Point3d{b0, b1, b2}
+	return true, Vector{b0, b1, b2}
 }

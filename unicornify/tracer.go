@@ -9,7 +9,7 @@ import (
 
 type TraceResult struct {
 	Z         float64
-	Direction Point3d
+	Direction Vector
 	Color     Color
 }
 
@@ -116,7 +116,7 @@ func (is TraceIntervals) Invert() TraceIntervals {
 }
 
 type Tracer interface {
-	Trace(x, y float64) (bool, float64, Point3d, Color)
+	Trace(x, y float64) (bool, float64, Vector, Color)
 	TraceDeep(x, y float64) (bool, TraceIntervals)
 	GetBounds() Bounds
 }
@@ -130,7 +130,7 @@ func DeepifyTrace(t Tracer, x, y float64) (bool, TraceIntervals) {
 	return ok, inter
 }
 
-func UnDeepifyTrace(t Tracer, x, y float64) (bool, float64, Point3d, Color) {
+func UnDeepifyTrace(t Tracer, x, y float64) (bool, float64, Vector, Color) {
 	ok, r := t.TraceDeep(x, y)
 	if ok {
 		first := r[0].Start
@@ -196,11 +196,11 @@ func NewGroupTracer() *GroupTracer {
 	return &GroupTracer{}
 }
 
-func (gt *GroupTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
+func (gt *GroupTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
 	any := false
 	var minz float64 = 0.0
 	var col Color = Black
-	var dir Point3d
+	var dir Vector
 	for _, t := range gt.tracers {
 		b := t.GetBounds()
 		if !b.ContainsXY(x, y) {
@@ -326,9 +326,9 @@ type ImageTracer struct {
 	z      func(x, y float64) (bool, float64)
 }
 
-var NoDirection = Point3d{0, 0, 0}
+var NoDirection = Vector{0, 0, 0}
 
-func (t *ImageTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
+func (t *ImageTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
 	if !t.bounds.ContainsXY(x, y) {
 		return false, 0, NoDirection, Black
 	}
@@ -354,11 +354,11 @@ func (t *ImageTracer) GetBounds() Bounds {
 
 type DirectionalLightTracer struct {
 	GroupTracer
-	LightDirectionUnit Point3d
+	LightDirectionUnit Vector
 	Lighten, Darken    float64
 }
 
-func (t *DirectionalLightTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
+func (t *DirectionalLightTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
 	ok, z, dir, col := t.GroupTracer.Trace(x, y)
 	if !ok {
 		return ok, z, dir, col
@@ -387,7 +387,7 @@ func (t *DirectionalLightTracer) TraceDeep(x, y float64) (bool, TraceIntervals) 
 func (t *DirectionalLightTracer) Add(ts ...Tracer) {
 	t.GroupTracer.Add(ts...)
 }
-func (t *DirectionalLightTracer) SetLightDirection(dir Point3d) {
+func (t *DirectionalLightTracer) SetLightDirection(dir Vector) {
 	length := dir.Length()
 	if length != 0 {
 		dir = dir.Times(1 / length)
@@ -395,7 +395,7 @@ func (t *DirectionalLightTracer) SetLightDirection(dir Point3d) {
 	t.LightDirectionUnit = dir
 }
 
-func NewDirectionalLightTracer(lightDirection Point3d, lighten, darken float64) *DirectionalLightTracer {
+func NewDirectionalLightTracer(lightDirection Vector, lighten, darken float64) *DirectionalLightTracer {
 	result := &DirectionalLightTracer{Lighten: lighten, Darken: darken}
 	result.SetLightDirection(lightDirection)
 	return result
@@ -404,18 +404,18 @@ func NewDirectionalLightTracer(lightDirection Point3d, lighten, darken float64) 
 // ------- PointLightTracer (experimental, unused) -------
 
 type PointLightTracer struct {
-	LightPositions []Point3d
+	LightPositions []Vector
 	SourceTracer   Tracer
 	HalfLifes      []float64
 }
 
-func (t *PointLightTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
+func (t *PointLightTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
 	ok, z, dir, col := t.SourceTracer.Trace(x, y)
 	if !ok {
 		return ok, z, dir, col
 	}
 	dirlen := dir.Length()
-	unit := Point3d{0, 0, 0}
+	unit := Vector{0, 0, 0}
 	if dirlen > 0 {
 		unit = dir.Times(1 / dirlen)
 	} else {
@@ -424,7 +424,7 @@ func (t *PointLightTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
 
 	lightsum := 0.0
 	for i, lightposition := range t.LightPositions {
-		lightdir := Point3d{float64(x), float64(y), z}.Shifted(lightposition.Neg())
+		lightdir := Vector{float64(x), float64(y), z}.Shifted(lightposition.Neg())
 		lightdirunit := lightdir.Times(1 / lightdir.Length())
 
 		sp := -unit.ScalarProd(lightdirunit)
@@ -460,7 +460,7 @@ func (t *PointLightTracer) GetBounds() Bounds {
 	return t.SourceTracer.GetBounds()
 }
 
-func NewPointLightTracer(source Tracer, lightPos ...Point3d) *PointLightTracer {
+func NewPointLightTracer(source Tracer, lightPos ...Vector) *PointLightTracer {
 	result := &PointLightTracer{SourceTracer: source, LightPositions: lightPos}
 	return result
 }
@@ -488,7 +488,7 @@ func (t *DifferenceTracer) GetBounds() Bounds {
 	return t.Base.GetBounds()
 }
 
-func (t *DifferenceTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
+func (t *DifferenceTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
 	return UnDeepifyTrace(t, x, y)
 }
 
@@ -517,7 +517,7 @@ func (t *IntersectionTracer) GetBounds() Bounds {
 	return t.bounds
 }
 
-func (t *IntersectionTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
+func (t *IntersectionTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
 	return UnDeepifyTrace(t, x, y)
 }
 
@@ -541,7 +541,7 @@ func (t *ScalingTracer) GetBounds() Bounds {
 	return t.bounds
 }
 
-func (t *ScalingTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
+func (t *ScalingTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
 	ok, z, dir, col := t.Source.Trace(x/t.Scale, y/t.Scale) // TODO: scale the result?
 	return ok, z * t.Scale, dir, col
 }
@@ -573,7 +573,7 @@ func (t *TranslatingTracer) GetBounds() Bounds {
 	return t.bounds
 }
 
-func (t *TranslatingTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
+func (t *TranslatingTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
 	return t.Source.Trace(x-t.ShiftX, y-t.ShiftY)
 }
 
@@ -597,12 +597,12 @@ type ShadowCastingTracer struct {
 	Lighten, Darken           float64
 }
 
-func (t *ShadowCastingTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
+func (t *ShadowCastingTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
 	ok, z, dir, col := t.SourceTracer.Trace(x, y)
 	if !ok {
 		return ok, z, dir, col
 	}
-	origPoint := t.WorldView.UnProject(Point3d{x, y, z})
+	origPoint := t.WorldView.UnProject(Vector{x, y, z})
 	lp := t.LightView.ProjectBall(NewBallP(origPoint, 0, Color{}))
 
 	lok, lz, ldir, _ := t.LightTracer.Trace(lp.X(), lp.Y())
@@ -612,7 +612,7 @@ func (t *ShadowCastingTracer) Trace(x, y float64) (bool, float64, Point3d, Color
 	if !seeing {
 		col = Darken(col, uint8(t.Darken))
 	} else {
-		rayUnit := Point3d{lp.X(), lp.Y(), t.LightView.FocalLength}.Unit()
+		rayUnit := Vector{lp.X(), lp.Y(), t.LightView.FocalLength}.Unit()
 		sp := ldir.Unit().ScalarProd(rayUnit)
 
 		if sp > 0 { // Given a completely realistic world with no rounding errors, this wouldn't happen.
@@ -638,7 +638,7 @@ func (t *ShadowCastingTracer) GetBounds() Bounds {
 	return t.SourceTracer.GetBounds()
 }
 
-func NewShadowCastingTracer(source Tracer, worldView WorldView, shadowCaster Thing, lightPos, lightTarget Point3d, lighten, darken float64) *ShadowCastingTracer {
+func NewShadowCastingTracer(source Tracer, worldView WorldView, shadowCaster Thing, lightPos, lightTarget Vector, lighten, darken float64) *ShadowCastingTracer {
 	lightView := WorldView{
 		CameraPosition: lightPos,
 		LookAtPoint:    lightTarget,

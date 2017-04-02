@@ -6,13 +6,13 @@ type FlatTracer struct {
 	p1, p2, p3  BallProjection
 	bounds      Bounds
 	fourCorners bool
-	w1, w2      Point3d
-	dir         Point3d
+	w1, w2      Vector
+	dir         Vector
 	fourthColor Color
 	wv          WorldView
 }
 
-func NewFlatTracer(wv WorldView, b1, b2, b3 *Ball, fourCorners bool, fourthColor Color, roughDirection Point3d) *FlatTracer {
+func NewFlatTracer(wv WorldView, b1, b2, b3 *Ball, fourCorners bool, fourthColor Color, roughDirection Vector) *FlatTracer {
 	t := &FlatTracer{
 		p1:          wv.ProjectBall(b1),
 		p2:          wv.ProjectBall(b2),
@@ -42,13 +42,13 @@ func (t *FlatTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 	return DeepifyTrace(t, x, y)
 }
 
-func (t *FlatTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
-	v := Point3d{x, y, t.wv.FocalLength}.Unit()
+func (t *FlatTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
+	v := Vector{x, y, t.wv.FocalLength}.Unit()
 	return t.TraceRay(v)
 }
 
-func (t *FlatTracer) TraceRay(ray Point3d) (bool, float64, Point3d, Color) {
-	ok, inter := IntersectionOfPlaneAndLine(t.p1.CenterCS, t.w1, t.w2, Point3d{0, 0, 0}, ray)
+func (t *FlatTracer) TraceRay(ray Vector) (bool, float64, Vector, Color) {
+	ok, inter := IntersectionOfPlaneAndLine(t.p1.CenterCS, t.w1, t.w2, Vector{0, 0, 0}, ray)
 	if !ok {
 		return false, 0, NoDirection, Color{}
 	}

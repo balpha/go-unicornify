@@ -52,10 +52,6 @@ func ballSetImpl(t Thing, seen map[*Ball]bool, ch chan *Ball, outer bool) {
 		for _, s := range t.things {
 			ballSetImpl(s, seen, ch, false)
 		}
-	/*case *Quad:
-	for _, b := range t.Balls {
-		ballSetImpl(b, seen, ch, false)
-	}*/
 	default:
 		panic("unhandled thing type")
 	}

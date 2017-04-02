@@ -47,9 +47,9 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 
 	data.Randomize4(rand)
 
-	lightDirection := Point3d{rand.Random()*16 - 8, 10, rand.Random() * 3}
+	lightDirection := Vector{rand.Random()*16 - 8, 10, rand.Random() * 3}
 
-	lightDirection = Point3d{lightDirection.Z(), lightDirection.Y(), -lightDirection.X()}
+	lightDirection = Vector{lightDirection.Z(), lightDirection.Y(), -lightDirection.X()}
 
 	// end randomization
 
@@ -95,7 +95,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 	factor := math.Sqrt((unicornScaleFactor - .5) / 2.5)
 
 	lookAtPoint := uni.Shoulder.Center.Shifted(uni.Head.Center.Shifted(uni.Shoulder.Center.Neg()).Times(factor))
-	cp := lookAtPoint.Shifted(Point3d{0, 0, -3 * focalLength}).RotatedAround(uni.Head.Center, -xAngle, 0).RotatedAround(uni.Head.Center, -yAngle, 1)
+	cp := lookAtPoint.Shifted(Vector{0, 0, -3 * focalLength}).RotatedAround(uni.Head.Center, -xAngle, 0).RotatedAround(uni.Head.Center, -yAngle, 1)
 
 	wv := WorldView{
 		CameraPosition: cp,
@@ -178,7 +178,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 	tracer := uni.GetTracer(wv)
 
 	if shading {
-		p := Point3d{0, 0, 1000}
+		p := Vector{0, 0, 1000}
 		pp := wv.ProjectBall(NewBallP(p, 0, Color{})).CenterCS
 		ldp := wv.ProjectBall(NewBallP(p.Shifted(lightDirection), 0, Color{})).CenterCS.Minus(pp)
 		lt := NewDirectionalLightTracer(ldp, 32, 80)

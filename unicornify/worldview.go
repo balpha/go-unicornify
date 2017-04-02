@@ -5,15 +5,15 @@ import (
 )
 
 type WorldView struct {
-	CameraPosition Point3d
-	LookAtPoint    Point3d
+	CameraPosition Vector
+	LookAtPoint    Vector
 	FocalLength    float64
-	ux, uy, zero   Point3d
+	ux, uy, zero   Vector
 }
 
 // Given a vector v, returns the two vectors that form a right-hand rule system
 // (u1, u2, v) such that u2 points upward. If v is a unit vector, then so are u1 and u2.
-func CrossAxes(v Point3d) (u1, u2 Point3d) {
+func CrossAxes(v Vector) (u1, u2 Vector) {
 	n1, n2, n3 := v.Decompose()
 
 	var x1, x3 float64
@@ -35,7 +35,7 @@ func CrossAxes(v Point3d) (u1, u2 Point3d) {
 		x3 = 0
 	}
 
-	ux := Point3d{x1, 0, x3}
+	ux := Vector{x1, 0, x3}
 
 	// cross product of ux and normal (=uz) gives the y axis but in the wrong direction
 	// (because x-z-y is not a right-hand rule system)
@@ -43,7 +43,7 @@ func CrossAxes(v Point3d) (u1, u2 Point3d) {
 	y2 := -(x3*n1 - x1*n3)
 	y3 := -(x1 * n2)
 
-	uy := Point3d{y1, y2, y3}
+	uy := Vector{y1, y2, y3}
 
 	return ux, uy
 }
@@ -55,7 +55,7 @@ func (wv *WorldView) Init() {
 	wv.zero = wv.CameraPosition.Shifted(wv.LookAtPoint.Shifted(wv.CameraPosition.Neg()).Unit().Times(wv.FocalLength))
 }
 
-func (wv WorldView) UnProject(p Point3d) Point3d {
+func (wv WorldView) UnProject(p Vector) Vector {
 	pos := wv.zero.Shifted(wv.ux.Times(p.X())).Shifted(wv.uy.Times(p.Y()))
 	return wv.CameraPosition.Shifted(pos.Minus(wv.CameraPosition).Unit().Times(p.Z()))
 }
@@ -72,7 +72,7 @@ func (wv WorldView) ProjectBall(b *Ball) BallProjection {
 
 		projection := BallProjection{
 			ProjectedCenterOS: wv.CameraPosition.Shifted(cam2c.Times(intf[2])),
-			ProjectedCenterCS: Point3d{intf[0], intf[1], wv.FocalLength},
+			ProjectedCenterCS: Vector{intf[0], intf[1], wv.FocalLength},
 			WorldView:         wv,
 			BaseBall:          *b,
 		}

@@ -114,12 +114,12 @@ func (t *BoneTracer) GetBounds() Bounds {
 	return t.bounds
 }
 
-func (t *BoneTracer) Trace(x, y float64) (bool, float64, Point3d, Color) {
+func (t *BoneTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
 	return t.traceImpl(x, y, false)
 }
-func (t *BoneTracer) traceImpl(x, y float64, backside bool) (bool, float64, Point3d, Color) {
+func (t *BoneTracer) traceImpl(x, y float64, backside bool) (bool, float64, Vector, Color) {
 	focalLength := t.b1.ProjectedCenterCS.Z()
-	v1, v2, v3 := Point3d{x, y, focalLength}.Unit().Decompose()
+	v1, v2, v3 := Vector{x, y, focalLength}.Unit().Decompose()
 
 	c3 := -2 * (v1*t.w1 + v2*t.w2 + v3*t.w3)
 	c5 := -2 * (v1*t.a1 + v2*t.a2 + v3*t.a3)
@@ -209,8 +209,8 @@ func (t *BoneTracer) traceImpl(x, y float64, backside bool) (bool, float64, Poin
 	m2 := t.a2 + f*t.w2
 	m3 := t.a3 + f*t.w3
 
-	p := Point3d{v1, v2, v3}.Times(z)
-	dir := p.Minus(Point3d{m1, m2, m3})
+	p := Vector{v1, v2, v3}.Times(z)
+	dir := p.Minus(Vector{m1, m2, m3})
 	return true, z, dir, MixColors(t.b1.BaseBall.Color, t.b2.BaseBall.Color, f)
 
 }
