@@ -264,18 +264,18 @@ func (gt *GroupTracer) Add(ts ...Tracer) {
 func (gt *GroupTracer) SubdivideAndSort() {
 	const n = 2
 	const min = 5
-	
+
 	subs := make([]*GroupTracer, n*n)
 	b := gt.GetBounds()
 	if b.Empty {
 		return
 	}
 	count := 0
-	for _, t:= range gt.tracers {
+	for _, t := range gt.tracers {
 		mid := t.GetBounds().MidPoint()
-		bucketx := round(float64(n-1)*(mid.X()-b.XMin)/b.Dx())
-		buckety := round(float64(n-1)*(mid.Y()-b.YMin)/b.Dy())
-		bucket := bucketx+n*buckety
+		bucketx := round(float64(n-1) * (mid.X() - b.XMin) / b.Dx())
+		buckety := round(float64(n-1) * (mid.Y() - b.YMin) / b.Dy())
+		bucket := bucketx + n*buckety
 		sub := subs[bucket]
 		if sub == nil {
 			sub = NewGroupTracer()
@@ -317,8 +317,6 @@ func (gt *GroupTracer) Less(i, j int) bool {
 func (gt *GroupTracer) Swap(i, j int) {
 	gt.tracers[i], gt.tracers[j] = gt.tracers[j], gt.tracers[i]
 }
-
-
 
 // ------- ImageTracer -------
 
