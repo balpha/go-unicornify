@@ -23,8 +23,8 @@ func (b *Ball) GetTracer(wv WorldView) Tracer {
 }
 
 func (b *Ball) SetDistance(distance float64, other Ball) {
-	span := b.Center.Shifted(other.Center.Neg())
-	b.Center = other.Center.Shifted(span.Times(distance / span.Length()))
+	span := b.Center.Plus(other.Center.Neg())
+	b.Center = other.Center.Plus(span.Times(distance / span.Length()))
 }
 
 func (b *Ball) RotateAround(other Ball, angle float64, axis byte) {
@@ -42,15 +42,15 @@ func (b *Ball) SetGap(gap float64, other Ball) {
 func (b *Ball) MoveToBone(bone Bone) {
 	b1 := bone.Balls[0]
 	b2 := bone.Balls[1]
-	span := b2.Center.Shifted(b1.Center.Neg())
-	bs := b.Center.Shifted(b1.Center.Neg())
+	span := b2.Center.Plus(b1.Center.Neg())
+	bs := b.Center.Plus(b1.Center.Neg())
 	f := span.ScalarProd(bs) / (span.Length() * bs.Length())
 	if f <= 0 {
 		b.MoveToSphere(*b1)
 	} else if f >= 1 {
 		b.MoveToSphere(*b2)
 	} else {
-		ibc := b1.Center.Shifted(span.Times(f))
+		ibc := b1.Center.Plus(span.Times(f))
 		ib := NewBall(ibc.X(), ibc.Y(), ibc.Z(), b1.Radius+f*(b2.Radius-b1.Radius), Color{})
 		b.MoveToSphere(*ib)
 

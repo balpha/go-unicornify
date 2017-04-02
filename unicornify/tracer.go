@@ -424,7 +424,7 @@ func (t *PointLightTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
 
 	lightsum := 0.0
 	for i, lightposition := range t.LightPositions {
-		lightdir := Vector{float64(x), float64(y), z}.Shifted(lightposition.Neg())
+		lightdir := Vector{float64(x), float64(y), z}.Plus(lightposition.Neg())
 		lightdirunit := lightdir.Times(1 / lightdir.Length())
 
 		sp := -unit.ScalarProd(lightdirunit)

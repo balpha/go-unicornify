@@ -28,7 +28,7 @@ func NewUnicorn(data UnicornData) *Unicorn {
 	u.HornOnset = NewBall(-22, -10, 0, data.HornOnsetSize, data.Color("Horn", 70))
 	u.HornOnset.MoveToSphere(*u.Head)
 
-	tipPos := u.HornOnset.Center.Shifted(Vector{-10, 0, 0})
+	tipPos := u.HornOnset.Center.Plus(Vector{-10, 0, 0})
 	u.HornTip = NewBall(tipPos[0], tipPos[1], tipPos[2], data.HornTipSize, data.Color("Horn", 90))
 	u.HornTip.SetDistance(data.HornLength, *u.HornOnset)
 	u.HornTip.RotateAround(*u.HornOnset, data.HornAngle, 2)
@@ -39,9 +39,9 @@ func NewUnicorn(data UnicornData) *Unicorn {
 
 	u.makeMane(data)
 
-	u.TailStart = NewBallP(u.Butt.Center.Shifted(Vector{10, -10, 0}), data.TailStartSize, data.Color("Hair", 80))
+	u.TailStart = NewBallP(u.Butt.Center.Plus(Vector{10, -10, 0}), data.TailStartSize, data.Color("Hair", 80))
 	u.TailStart.MoveToSphere(*u.Butt)
-	u.TailEnd = NewBallP(u.TailStart.Center.Shifted(Vector{10, 0, 0}), data.TailEndSize, data.Color("Hair", 60))
+	u.TailEnd = NewBallP(u.TailStart.Center.Plus(Vector{10, 0, 0}), data.TailEndSize, data.Color("Hair", 60))
 	u.TailEnd.SetDistance(data.TailLength, *u.TailStart)
 	u.TailEnd.RotateAround(*u.TailStart, data.TailAngle, 2)
 	u.Tail = NewNonLinBone(u.TailStart, u.TailEnd, nil, gammaFuncTimes(data.TailGamma, 0.3))
@@ -87,38 +87,38 @@ func (u *Unicorn) makeEyes(data UnicornData) {
 	u.EyeRight = NewBall(-10, 3, 5, data.EyeSize, Color{255, 255, 255})
 	u.EyeRight.SetGap(5, *u.Head)
 
-	u.PupilLeft = NewBallP(u.EyeLeft.Center.Shifted(Vector{-1, 0, 0}), data.PupilSize, Color{0, 0, 0})
+	u.PupilLeft = NewBallP(u.EyeLeft.Center.Plus(Vector{-1, 0, 0}), data.PupilSize, Color{0, 0, 0})
 	u.PupilLeft.MoveToSphere(*u.EyeLeft)
-	u.PupilRight = NewBallP(u.EyeRight.Center.Shifted(Vector{-1, 0, 0}), data.PupilSize, Color{0, 0, 0})
+	u.PupilRight = NewBallP(u.EyeRight.Center.Plus(Vector{-1, 0, 0}), data.PupilSize, Color{0, 0, 0})
 	u.PupilRight.MoveToSphere(*u.EyeRight)
 
 	moodDelta := data.BrowMood * 3
 
-	u.BrowLeftInner = NewBallP(u.EyeLeft.Center.Shifted(Vector{0, -10, data.BrowLength}), data.BrowSize, data.Color("Hair", 50))
+	u.BrowLeftInner = NewBallP(u.EyeLeft.Center.Plus(Vector{0, -10, data.BrowLength}), data.BrowSize, data.Color("Hair", 50))
 	u.BrowLeftInner.SetGap(5+moodDelta, *u.EyeLeft)
-	u.BrowLeftMiddle = NewBallP(u.EyeLeft.Center.Shifted(Vector{0, -10, 0}), data.BrowSize, data.Color("Hair", 70))
+	u.BrowLeftMiddle = NewBallP(u.EyeLeft.Center.Plus(Vector{0, -10, 0}), data.BrowSize, data.Color("Hair", 70))
 	u.BrowLeftMiddle.SetGap(5+data.BrowLength, *u.EyeLeft)
-	u.BrowLeftOuter = NewBallP(u.EyeLeft.Center.Shifted(Vector{0, -10, -data.BrowLength}), data.BrowSize, data.Color("Hair", 60))
+	u.BrowLeftOuter = NewBallP(u.EyeLeft.Center.Plus(Vector{0, -10, -data.BrowLength}), data.BrowSize, data.Color("Hair", 60))
 	u.BrowLeftOuter.SetGap(5-moodDelta, *u.EyeLeft)
 
-	u.BrowRightInner = NewBallP(u.EyeRight.Center.Shifted(Vector{0, -10, -data.BrowLength}), data.BrowSize, data.Color("Hair", 50))
+	u.BrowRightInner = NewBallP(u.EyeRight.Center.Plus(Vector{0, -10, -data.BrowLength}), data.BrowSize, data.Color("Hair", 50))
 	u.BrowRightInner.SetGap(5+moodDelta, *u.EyeRight)
-	u.BrowRightMiddle = NewBallP(u.EyeRight.Center.Shifted(Vector{0, -10, 0}), data.BrowSize, data.Color("Hair", 70))
+	u.BrowRightMiddle = NewBallP(u.EyeRight.Center.Plus(Vector{0, -10, 0}), data.BrowSize, data.Color("Hair", 70))
 	u.BrowRightMiddle.SetGap(5+data.BrowLength, *u.EyeRight)
-	u.BrowRightOuter = NewBallP(u.EyeRight.Center.Shifted(Vector{0, -10, data.BrowLength}), data.BrowSize, data.Color("Hair", 60))
+	u.BrowRightOuter = NewBallP(u.EyeRight.Center.Plus(Vector{0, -10, data.BrowLength}), data.BrowSize, data.Color("Hair", 60))
 	u.BrowRightOuter.SetGap(5-moodDelta, *u.EyeRight)
 }
 
 func (u *Unicorn) makeMane(data UnicornData) {
 	u.Hairs = &Figure{}
 
-	hairTop := NewBallP(u.Head.Center.Shifted(Vector{10, -5, 0}), 5, Color{})
+	hairTop := NewBallP(u.Head.Center.Plus(Vector{10, -5, 0}), 5, Color{})
 	hairTop.MoveToSphere(*u.Head)
-	hairBottom := NewBallP(u.Shoulder.Center.Shifted(Vector{10, -15, 0}), 5, Color{})
+	hairBottom := NewBallP(u.Shoulder.Center.Plus(Vector{10, -15, 0}), 5, Color{})
 	hairBottom.MoveToSphere(*u.Shoulder)
-	hairSpan := hairBottom.Center.Shifted(hairTop.Center.Neg())
+	hairSpan := hairBottom.Center.Plus(hairTop.Center.Neg())
 	for i := 0; i < len(data.HairStarts); i++ {
-		p := hairTop.Center.Shifted(hairSpan.Times(data.HairStarts[i] / 100.0))
+		p := hairTop.Center.Plus(hairSpan.Times(data.HairStarts[i] / 100.0))
 		hairStart := NewBallP(p, 5, data.Color("Hair", 60))
 		endPoint := Vector{
 			p.X() + data.HairLengths[i],

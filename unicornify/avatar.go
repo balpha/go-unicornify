@@ -94,8 +94,8 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 	// center the shoulder at (1/2, 1/2)
 	factor := math.Sqrt((unicornScaleFactor - .5) / 2.5)
 
-	lookAtPoint := uni.Shoulder.Center.Shifted(uni.Head.Center.Shifted(uni.Shoulder.Center.Neg()).Times(factor))
-	cp := lookAtPoint.Shifted(Vector{0, 0, -3 * focalLength}).RotatedAround(uni.Head.Center, -xAngle, 0).RotatedAround(uni.Head.Center, -yAngle, 1)
+	lookAtPoint := uni.Shoulder.Center.Plus(uni.Head.Center.Plus(uni.Shoulder.Center.Neg()).Times(factor))
+	cp := lookAtPoint.Plus(Vector{0, 0, -3 * focalLength}).RotatedAround(uni.Head.Center, -xAngle, 0).RotatedAround(uni.Head.Center, -yAngle, 1)
 
 	wv := WorldView{
 		CameraPosition: cp,
@@ -180,7 +180,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 	if shading {
 		p := Vector{0, 0, 1000}
 		pp := wv.ProjectBall(NewBallP(p, 0, Color{})).CenterCS
-		ldp := wv.ProjectBall(NewBallP(p.Shifted(lightDirection), 0, Color{})).CenterCS.Minus(pp)
+		ldp := wv.ProjectBall(NewBallP(p.Plus(lightDirection), 0, Color{})).CenterCS.Minus(pp)
 		lt := NewDirectionalLightTracer(ldp, 32, 80)
 		lt.Add(tracer)
 

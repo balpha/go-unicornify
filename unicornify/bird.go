@@ -23,17 +23,17 @@ func NewBird(data BirdData) *Bird {
 
 	beakOnset := NewBall(24, 0, 0, data.BeakOnsetSize, data.Color("Beak", 30))
 	beakOnset.MoveToSphere(*head)
-	beakTip := NewBallP(beakOnset.Center.Shifted(Vector{10, 0, 0}), data.BeakTipSize, data.Color("Beak", 60))
+	beakTip := NewBallP(beakOnset.Center.Plus(Vector{10, 0, 0}), data.BeakTipSize, data.Color("Beak", 60))
 	beakTip.SetDistance(data.BeakLength, *beakOnset)
 
 	for _, zs := range [2]float64{-1, 1} {
 		wingAttachFront := NewBall(-6, 34, zs*23, 9, data.Color("Body", 30))
 		wingAttachFront.MoveToSphere(*chest)
 		wingAttachBack := NewBall(-41, 32, zs*10, 9, data.Color("Head", 30))
-		wingMiddle := NewBallP(wingAttachBack.Center.Shifted(Vector{0, 40, zs * 200}), 6, data.Color("Body", 40))
+		wingMiddle := NewBallP(wingAttachBack.Center.Plus(Vector{0, 40, zs * 200}), 6, data.Color("Body", 40))
 		wingAttachBack.MoveToSphere(*chest)
 		wingMiddle.MoveToSphere(*chest)
-		wingTip := NewBallP(butt.Center.Shifted(Vector{0, 0, zs}), 6, data.Color("Head", 50))
+		wingTip := NewBallP(butt.Center.Plus(Vector{0, 0, zs}), 6, data.Color("Head", 50))
 		wingTip.MoveToSphere(*butt)
 		wingTip.SetDistance(data.WingLength, *wingAttachFront)
 		wingTip.RotateAround(*wingAttachBack, data.WingAngle, 2)

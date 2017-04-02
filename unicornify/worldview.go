@@ -49,29 +49,29 @@ func CrossAxes(v Vector) (u1, u2 Vector) {
 }
 
 func (wv *WorldView) Init() {
-	view := wv.LookAtPoint.Shifted(wv.CameraPosition.Neg())
+	view := wv.LookAtPoint.Plus(wv.CameraPosition.Neg())
 	n := view.Times(1.0 / view.Length())
 	wv.ux, wv.uy = CrossAxes(n)
-	wv.zero = wv.CameraPosition.Shifted(wv.LookAtPoint.Shifted(wv.CameraPosition.Neg()).Unit().Times(wv.FocalLength))
+	wv.zero = wv.CameraPosition.Plus(wv.LookAtPoint.Plus(wv.CameraPosition.Neg()).Unit().Times(wv.FocalLength))
 }
 
 func (wv WorldView) UnProject(p Vector) Vector {
-	pos := wv.zero.Shifted(wv.ux.Times(p.X())).Shifted(wv.uy.Times(p.Y()))
-	return wv.CameraPosition.Shifted(pos.Minus(wv.CameraPosition).Unit().Times(p.Z()))
+	pos := wv.zero.Plus(wv.ux.Times(p.X())).Plus(wv.uy.Times(p.Y()))
+	return wv.CameraPosition.Plus(pos.Minus(wv.CameraPosition).Unit().Times(p.Z()))
 }
 
 func (wv WorldView) ProjectBall(b *Ball) BallProjection {
 	cam2c := b.Center.Minus(wv.CameraPosition)
-	view := wv.LookAtPoint.Shifted(wv.CameraPosition.Neg())
+	view := wv.LookAtPoint.Plus(wv.CameraPosition.Neg())
 	n := view.Times(1.0 / view.Length())
 
-	ok, intf := IntersectionOfPlaneAndLine(wv.CameraPosition.Shifted(n.Times(wv.FocalLength)), wv.ux, wv.uy, wv.CameraPosition, cam2c)
+	ok, intf := IntersectionOfPlaneAndLine(wv.CameraPosition.Plus(n.Times(wv.FocalLength)), wv.ux, wv.uy, wv.CameraPosition, cam2c)
 	if !ok { //FIXME
 		return BallProjection{BaseBall: *b}
 	} else {
 
 		projection := BallProjection{
-			ProjectedCenterOS: wv.CameraPosition.Shifted(cam2c.Times(intf[2])),
+			ProjectedCenterOS: wv.CameraPosition.Plus(cam2c.Times(intf[2])),
 			ProjectedCenterCS: Vector{intf[0], intf[1], wv.FocalLength},
 			WorldView:         wv,
 			BaseBall:          *b,
@@ -81,8 +81,8 @@ func (wv WorldView) ProjectBall(b *Ball) BallProjection {
 			return projection
 		}
 
-		closestToCam := wv.CameraPosition.Shifted(cam2c.Times(1 - b.Radius/cam2c.Length()))
-		secondPoint := closestToCam.Shifted(wv.uy.Times(b.Radius))
+		closestToCam := wv.CameraPosition.Plus(cam2c.Times(1 - b.Radius/cam2c.Length()))
+		secondPoint := closestToCam.Plus(wv.uy.Times(b.Radius))
 
 		p1 := wv.ProjectBall(NewBallP(closestToCam, 0, Color{}))
 		p2 := wv.ProjectBall(NewBallP(secondPoint, 0, Color{}))

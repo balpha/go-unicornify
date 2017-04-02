@@ -61,7 +61,7 @@ func (b *Bone) GetTracer(wv WorldView) Tracer {
 				fy = f(fy)
 			}
 
-			c := b1.Center.Shifted(v.Times(factor)).Shifted(vx.Times((fx - factor) * length)).Shifted(vy.Times((fy - factor) * length))
+			c := b1.Center.Plus(v.Times(factor)).Plus(vx.Times((fx - factor) * length)).Plus(vy.Times((fy - factor) * length))
 			r := MixFloats(b1.Radius, b2.Radius, factor)
 			ballp := wv.ProjectBall(NewBallP(c, r, col))
 			return ballp

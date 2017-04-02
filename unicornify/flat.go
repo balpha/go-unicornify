@@ -30,7 +30,7 @@ func NewFlatTracer(wv WorldView, b1, b2, b3 *Ball, fourCorners bool, fourthColor
 	bounds := RenderingBoundsForBalls(t.p1, t.p2, t.p3)
 	if fourCorners {
 		t.fourthColor = fourthColor
-		b4 := NewBallP(b1.Center.Shifted(b2.Center.Minus(b1.Center)).Shifted(b3.Center.Minus(b1.Center)), 0, Color{})
+		b4 := NewBallP(b1.Center.Plus(b2.Center.Minus(b1.Center)).Plus(b3.Center.Minus(b1.Center)), 0, Color{})
 		p4 := wv.ProjectBall(b4)
 		bounds = bounds.Union(RenderingBoundsForBalls(p4))
 	}

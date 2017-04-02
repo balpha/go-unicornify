@@ -4,9 +4,6 @@ import (
 	"math"
 )
 
-const pi = math.Pi
-const deg360 = 2 * pi
-
 type Vector [3]float64
 
 type Point2d [2]float64
@@ -23,7 +20,7 @@ func (p Vector) Z() float64 {
 	return p[2]
 }
 
-func (p Vector) Shifted(delta Vector) Vector {
+func (p Vector) Plus(delta Vector) Vector {
 	return Vector{
 		p[0] + delta[0],
 		p[1] + delta[1],
@@ -44,7 +41,7 @@ func (p Vector) Times(v float64) Vector {
 }
 
 func (p Vector) Minus(other Vector) Vector {
-	return p.Shifted(other.Neg())
+	return p.Plus(other.Neg())
 }
 
 func (p Vector) ScalarProd(v Vector) float64 {
@@ -97,7 +94,7 @@ func (p Vector) RotatedAround(other Vector, angle float64, axis byte) Vector {
 		reverse = [3]byte{0, 1, 2}
 	}
 
-	shifted := p.Shifted(other.Neg())
+	shifted := p.Plus(other.Neg())
 
 	// the letters x, y, z are the correct ones for the case axis = 2
 	x1, y1, z1 := shifted[swap[0]], shifted[swap[1]], shifted[swap[2]]
@@ -106,7 +103,7 @@ func (p Vector) RotatedAround(other Vector, angle float64, axis byte) Vector {
 	rotated[1] = x1*math.Sin(angle) + y1*math.Cos(angle)
 	rotated[2] = z1
 
-	return Vector{rotated[reverse[0]], rotated[reverse[1]], rotated[reverse[2]]}.Shifted(other)
+	return Vector{rotated[reverse[0]], rotated[reverse[1]], rotated[reverse[2]]}.Plus(other)
 }
 
 func MixBytes(b1, b2 byte, f float64) byte {
