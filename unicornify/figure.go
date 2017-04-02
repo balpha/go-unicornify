@@ -1,10 +1,8 @@
 package unicornify
 
-import (
-)
+import ()
 
 type Thing interface {
-	Project(wv WorldView)
 	GetTracer(wv WorldView) Tracer
 }
 
@@ -14,12 +12,6 @@ type Figure struct {
 
 func (f *Figure) Add(things ...Thing) {
 	f.things = append(f.things, things...)
-}
-
-func (f *Figure) Project(wv WorldView) {
-	for i := 0; i < len(f.things); i++ {
-		f.things[i].Project(wv)
-	}
 }
 
 func (f *Figure) GetTracer(wv WorldView) Tracer {

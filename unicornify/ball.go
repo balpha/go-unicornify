@@ -21,9 +21,6 @@ func (b *Ball) GetTracer(wv WorldView) Tracer {
 	result := NewBone(b, b).GetTracer(wv)
 	return result
 }
-func (b *Ball) Project(wv WorldView) {
-	wv.ProjectBall(b)
-}
 
 func (b *Ball) SetDistance(distance float64, other Ball) {
 	span := b.Center.Shifted(other.Center.Neg())

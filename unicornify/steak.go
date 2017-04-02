@@ -9,12 +9,6 @@ type Steak struct {
 	Rounded     bool
 }
 
-func (s *Steak) Project(wv WorldView) {
-	for _, b := range s.Balls {
-		b.Project(wv)
-	}
-}
-
 func NewSteak(b1, b2, b3 *Ball) *Steak {
 	return &Steak{Balls: [3]*Ball{b1, b2, b3}}
 }

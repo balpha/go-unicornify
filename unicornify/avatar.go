@@ -105,7 +105,6 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 	Shift := Point2d{0.5 * fsize, factor*fsize/3 + (1-factor)*fsize/2}
 	Scale := ((unicornScaleFactor-0.5)/2.5*2 + 0.5) * fsize / 140.0
 
-	uni.Project(wv)
 	wv.Init()
 
 	img := image.NewRGBA(image.Rect(0, 0, size, size))

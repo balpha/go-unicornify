@@ -33,11 +33,6 @@ func reverse(f func(float64) float64) func(float64) float64 {
 	}
 }
 
-func (b *Bone) Project(wv WorldView) {
-	b.Balls[0].Project(wv)
-	b.Balls[1].Project(wv)
-}
-
 func (b *Bone) GetTracer(wv WorldView) Tracer {
 	b1 := b.Balls[0]
 	b2 := b.Balls[1]
