@@ -1,11 +1,9 @@
 package unicornify
 
 import (
+	. "bitbucket.org/balpha/go-unicornify/unicornify/core"
 	"bitbucket.org/balpha/gopyrand"
-	"math"
 )
-
-const DEGREE = math.Pi / 180
 
 type UnicornData struct {
 	HeadSize           float64

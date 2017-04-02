@@ -1,6 +1,9 @@
 package unicornify
 
 import (
+	. "bitbucket.org/balpha/go-unicornify/unicornify/core"
+	. "bitbucket.org/balpha/go-unicornify/unicornify/elements"
+	. "bitbucket.org/balpha/go-unicornify/unicornify/rendering"
 	"bitbucket.org/balpha/gopyrand"
 	"image"
 	"math"
@@ -128,7 +131,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 			if l.Hoof.Center.Y() > ymax {
 				ymax = l.Hoof.Center.Y()
 			}
-			ymaxproj = math.Max(ymaxproj, wv.ProjectBall(l.Hoof).Y())
+			ymaxproj = math.Max(ymaxproj, ProjectBall(wv, l.Hoof).Y())
 		}
 		shiftedY := ymaxproj*Scale + Shift[1]
 		hoofHorizonDist := (shiftedY/fsize - bgdata.Horizon) / (1 - bgdata.Horizon) // 0 = bottom foot at horizon
@@ -158,7 +161,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 
 		for _, l := range uni.Legs {
 			h := l.Hoof
-			hproj := wv.ProjectBall(h)
+			hproj := ProjectBall(wv, h)
 			gimg := image.NewRGBA(image.Rect(0, 0, size, size))
 			shiftedY := hproj.Y()*Scale + Shift[1]
 			grassdata.MinBottomY = shiftedY + hproj.ProjectedRadius*Scale + (ymax-h.Center.Y())*hproj.ProjectedRadius/h.Radius*Scale
@@ -168,7 +171,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 				ok, z, _, _ := shinTracer.Trace(x, y)
 				return ok, z - 1
 			}
-			tr := &ImageTracer{img: gimg, bounds: shinTracer.GetBounds(), z: z}
+			tr := NewImageTracer(gimg, shinTracer.GetBounds(), z)
 			grassTracers = append(grassTracers, tr)
 		}
 		grassdata.MinBottomY = 0
@@ -179,8 +182,8 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 
 	if shading {
 		p := Vector{0, 0, 1000}
-		pp := wv.ProjectBall(NewBallP(p, 0, Color{})).CenterCS
-		ldp := wv.ProjectBall(NewBallP(p.Plus(lightDirection), 0, Color{})).CenterCS.Minus(pp)
+		pp := wv.ProjectSphere(p, 0).CenterCS
+		ldp := wv.ProjectSphere(p.Plus(lightDirection), 0).CenterCS.Minus(pp)
 		lt := NewDirectionalLightTracer(ldp, 32, 80)
 		lt.Add(tracer)
 

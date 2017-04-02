@@ -1,11 +1,14 @@
 package unicornify
 
 import (
+	. "bitbucket.org/balpha/go-unicornify/unicornify/core"
 	"bitbucket.org/balpha/gopyrand"
 	"image"
 	"image/color"
 	"math"
 )
+
+type Point2d [2]float64
 
 type BackgroundData struct {
 	SkyHue           int
@@ -107,6 +110,19 @@ func (d BackgroundData) Draw(im *image.RGBA, shading bool) {
 	}
 }
 
+func between(v, min, max int) int {
+	if min > max {
+		min, max = max, min
+	}
+	if v < min {
+		return min
+	}
+	if v > max {
+		return max
+	}
+	return v
+}
+
 func drawRainbow(img *image.RGBA, cx, cy, r int, bandWidth float64) {
 	size := img.Bounds().Dx()
 	left := between(cx-r, 0, size-1)
@@ -117,7 +133,7 @@ func drawRainbow(img *image.RGBA, cx, cy, r int, bandWidth float64) {
 
 	bandCols := [7]color.RGBA{}
 	for i := 0; i < 7; i++ {
-		col := hsl2col(i*45, 100, 50)
+		col := Hsl2col(i*45, 100, 50)
 		bandCols[i] = color.RGBA{col.R, col.G, col.B, 255}
 	}
 

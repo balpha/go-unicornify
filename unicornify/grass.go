@@ -1,6 +1,7 @@
 package unicornify
 
 import (
+	. "bitbucket.org/balpha/go-unicornify/unicornify/core"
 	"bitbucket.org/balpha/gopyrand"
 	"image"
 	"image/color"
@@ -64,7 +65,7 @@ func DrawGrass(img *image.RGBA, d GrassData, wv WorldView, shadowImage *image.RG
 			bd.Color = MixColors(d.Color1, d.Color2, rand.Random())
 
 			if shadowImage != nil {
-				s := shadowImage.RGBAAt(round(bd.BottomX), round(bd.BottomY))
+				s := shadowImage.RGBAAt(Round(bd.BottomX), Round(bd.BottomY))
 				if s.A == 255 && s.R < 128 {
 					bd.Color = Darken(bd.Color, uint8(128-s.R))
 				}
@@ -78,14 +79,14 @@ func DrawGrass(img *image.RGBA, d GrassData, wv WorldView, shadowImage *image.RG
 
 func DrawGrassBlade(img *image.RGBA, d BladeData) {
 
-	for dy := 0; dy <= round(d.Height); dy++ {
+	for dy := 0; dy <= Round(d.Height); dy++ {
 		f := float64(dy) / d.Height
 		curveP := (d.CurveStart + f*(d.CurveEnd-d.CurveStart)) * math.Pi / 2
 		curve := math.Sin(curveP) - curveP - (math.Sin(d.CurveStart*math.Pi/2) - d.CurveStart*math.Pi/2)
 		width := d.BottomWidth + f*(d.TopWidth-d.BottomWidth)
-		left := round(d.BottomX + curve*d.CurveStrength - width/2)
-		right := round(d.BottomX + curve*d.CurveStrength + width/2)
-		y := round(d.BottomY) - dy
+		left := Round(d.BottomX + curve*d.CurveStrength - width/2)
+		right := Round(d.BottomX + curve*d.CurveStrength + width/2)
+		y := Round(d.BottomY) - dy
 		for x := left; x <= right; x++ {
 			if d.ConstrainImage != nil && d.ConstrainImage.At(x, y).(color.RGBA).A == 0 {
 				continue

@@ -1,6 +1,9 @@
-package unicornify
+package elements
 
-import ()
+import (
+	. "bitbucket.org/balpha/go-unicornify/unicornify/core"
+	. "bitbucket.org/balpha/go-unicornify/unicornify/rendering"
+)
 
 type Steak struct {
 	Balls       [3]*Ball

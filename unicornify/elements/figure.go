@@ -1,10 +1,9 @@
-package unicornify
+package elements
 
-import ()
-
-type Thing interface {
-	GetTracer(wv WorldView) Tracer
-}
+import (
+	. "bitbucket.org/balpha/go-unicornify/unicornify/core"
+	. "bitbucket.org/balpha/go-unicornify/unicornify/rendering"
+)
 
 type Figure struct {
 	things []Thing

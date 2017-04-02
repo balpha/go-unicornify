@@ -1,4 +1,8 @@
-package unicornify
+package elements
+
+import (
+	. "bitbucket.org/balpha/go-unicornify/unicornify/core"
+)
 
 type Ball struct {
 	Center Vector
@@ -58,22 +62,30 @@ func (b *Ball) MoveToBone(bone Bone) {
 }
 
 type BallProjection struct {
-	CenterCS          Vector // the center in camera space (camera at (0,0,0), Z axis in view direction)
-	ProjectedCenterCS Vector // the projection in camera space (note that by definition, Z will always be = focal length)
-	ProjectedCenterOS Vector // the projection in original space
-	ProjectedRadius   float64
-	WorldView         WorldView
-	BaseBall          Ball // yeah sorry, but that's exactly what it is (btw, note this isn't a pointer)
+	SphereProjection
+	BaseBall Ball // yeah sorry, but that's exactly what it is (btw, note this isn't a pointer)
 }
 
-func (bp BallProjection) X() float64 {
-	return bp.ProjectedCenterCS.X()
+func RenderingBoundsForBalls(bps ...BallProjection) Bounds {
+	res := EmptyBounds
+	for _, bp := range bps {
+		r := Bounds{
+			XMin:  bp.X() - bp.ProjectedRadius,
+			XMax:  bp.X() + bp.ProjectedRadius,
+			YMin:  bp.Y() - bp.ProjectedRadius,
+			YMax:  bp.Y() + bp.ProjectedRadius,
+			ZMin:  bp.Z() - bp.BaseBall.Radius,
+			ZMax:  bp.Z() + bp.BaseBall.Radius,
+			Empty: false,
+		}
+		res = res.Union(r)
+	}
+	return res
 }
 
-func (bp BallProjection) Y() float64 {
-	return bp.ProjectedCenterCS.Y()
-}
-
-func (bp BallProjection) Z() float64 {
-	return bp.CenterCS.Length()
+func ProjectBall(wv WorldView, b *Ball) BallProjection {
+	return BallProjection{
+		SphereProjection: wv.ProjectSphere(b.Center, b.Radius),
+		BaseBall:         *b,
+	}
 }

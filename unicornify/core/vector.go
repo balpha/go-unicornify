@@ -1,12 +1,10 @@
-package unicornify
+package core
 
 import (
 	"math"
 )
 
 type Vector [3]float64
-
-type Point2d [2]float64
 
 func (p Vector) X() float64 {
 	return p[0]
@@ -69,13 +67,6 @@ func (p Vector) Neg() Vector {
 	}
 }
 
-func (p Vector) DiscardZ() Point2d {
-	return Point2d{
-		p[0],
-		p[1],
-	}
-}
-
 func (p Vector) Decompose() (x, y, z float64) {
 	return p[0], p[1], p[2]
 }
@@ -104,14 +95,6 @@ func (p Vector) RotatedAround(other Vector, angle float64, axis byte) Vector {
 	rotated[2] = z1
 
 	return Vector{rotated[reverse[0]], rotated[reverse[1]], rotated[reverse[2]]}.Plus(other)
-}
-
-func MixBytes(b1, b2 byte, f float64) byte {
-	return b1 + byte(f*(float64(b2)-float64(b1))+.5)
-}
-
-func MixFloats(f1, f2, f float64) float64 {
-	return f1 + f*(f2-f1)
 }
 
 func intersectionOfPlaneAndLineReadable(p0, ep1, ep2, l0, el Vector) (ok bool, intersection Vector) {
@@ -278,4 +261,41 @@ func IntersectionOfPlaneAndLine(p0, ep1, ep2, l0, el Vector) (ok bool, intersect
 	b0 = (b0 - (A01*b1 + A02*b2)) / A00
 
 	return true, Vector{b0, b1, b2}
+}
+
+// Given a vector v, returns the two vectors that form a right-hand rule system
+// (u1, u2, v) such that u2 points upward. If v is a unit vector, then so are u1 and u2.
+func CrossAxes(v Vector) (u1, u2 Vector) {
+	n1, n2, n3 := v.Decompose()
+
+	var x1, x3 float64
+
+	if n1 != 0 {
+		x3 = math.Sqrt(1 / (n3*n3/(n1*n1) + 1))
+		if n1 > 0 {
+			x3 = -x3
+		}
+		x1 = -x3 * n3 / n1
+	} else if n3 != 0 {
+		x1 = math.Sqrt(1 / (n1*n1/(n3*n3) + 1))
+		if n3 < 0 {
+			x1 = -x1
+		}
+		x3 = -x1 * n1 / n3
+	} else { // both 0 -- looking down
+		x1 = 1
+		x3 = 0
+	}
+
+	ux := Vector{x1, 0, x3}
+
+	// cross product of ux and normal (=uz) gives the y axis but in the wrong direction
+	// (because x-z-y is not a right-hand rule system)
+	y1 := -(-x3 * n2)
+	y2 := -(x3*n1 - x1*n3)
+	y3 := -(x1 * n2)
+
+	uy := Vector{y1, y2, y3}
+
+	return ux, uy
 }

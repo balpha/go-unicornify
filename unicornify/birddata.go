@@ -1,6 +1,7 @@
 package unicornify
 
 import (
+	. "bitbucket.org/balpha/go-unicornify/unicornify/core"
 	"bitbucket.org/balpha/gopyrand"
 )
 

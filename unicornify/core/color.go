@@ -1,4 +1,4 @@
-package unicornify
+package core
 
 import (
 	"image/color"
@@ -91,7 +91,7 @@ func v(m1, m2, hue float64) float64 {
 	return m1
 }
 
-func hsl2col(hue, sat, lig int) Color {
+func Hsl2col(hue, sat, lig int) Color {
 	h := float64(hue) / 360
 	s := float64(sat) / 100
 	l := float64(lig) / 100
@@ -121,5 +121,5 @@ func ColorFromData(d interface{}, name string, lightness int) Color {
 	dv := reflect.ValueOf(d)
 	hue := int(dv.FieldByName(name + "Hue").Int())
 	sat := int(dv.FieldByName(name + "Sat").Int())
-	return hsl2col(hue, sat, lightness)
+	return Hsl2col(hue, sat, lightness)
 }

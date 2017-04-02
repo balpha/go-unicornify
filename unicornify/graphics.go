@@ -1,6 +1,7 @@
 package unicornify
 
 import (
+	. "bitbucket.org/balpha/go-unicornify/unicornify/core"
 	"image"
 	"image/color"
 	"math"
@@ -106,44 +107,4 @@ func circleImpl(img *image.RGBA, cx, cy, r int, col Color, topHalfOnly bool, col
 			fill(-y, y, x)
 		}
 	}
-}
-
-func between(v, min, max int) int {
-	if min > max {
-		min, max = max, min
-	}
-	if v < min {
-		return min
-	}
-	if v > max {
-		return max
-	}
-	return v
-}
-func round(v float64) int {
-	if v >= 0 {
-		return int(v + .5)
-	}
-	return int(v - .5)
-}
-func roundUp(v float64) int {
-	i, f := math.Modf(v)
-	if f > 0 {
-		return int(i) + 1
-	}
-	return int(i) // note that this is also correct for f < 0
-}
-func roundDown(v float64) int {
-	i, f := math.Modf(v)
-	if f < 0 {
-		return int(i) - 1
-	}
-	return int(i)
-}
-func rectFromFloats(minx, miny, maxx, maxy float64) image.Rectangle {
-	return image.Rect(roundDown(minx), roundDown(miny), roundUp(maxx), roundUp(maxy))
-}
-
-func sqr(x float64) float64 {
-	return x * x
 }

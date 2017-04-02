@@ -1,6 +1,8 @@
-package unicornify
+package elements
 
 import (
+	. "bitbucket.org/balpha/go-unicornify/unicornify/core"
+	. "bitbucket.org/balpha/go-unicornify/unicornify/rendering"
 	"math"
 )
 
@@ -36,8 +38,8 @@ func reverse(f func(float64) float64) func(float64) float64 {
 func (b *Bone) GetTracer(wv WorldView) Tracer {
 	b1 := b.Balls[0]
 	b2 := b.Balls[1]
-	proj1 := wv.ProjectBall(b1)
-	proj2 := wv.ProjectBall(b2)
+	proj1 := ProjectBall(wv, b1)
+	proj2 := ProjectBall(wv, b2)
 
 	if b.XFunc == nil && b.YFunc == nil {
 		return NewBoneTracer(proj1, proj2)
@@ -63,7 +65,7 @@ func (b *Bone) GetTracer(wv WorldView) Tracer {
 
 			c := b1.Center.Plus(v.Times(factor)).Plus(vx.Times((fx - factor) * length)).Plus(vy.Times((fy - factor) * length))
 			r := MixFloats(b1.Radius, b2.Radius, factor)
-			ballp := wv.ProjectBall(NewBallP(c, r, col))
+			ballp := ProjectBall(wv, NewBallP(c, r, col))
 			return ballp
 		}
 
@@ -135,12 +137,12 @@ func (t *BoneTracer) traceImpl(x, y float64, backside bool) (bool, float64, Vect
 	} else {
 		c7 := c3 * t.c2i
 		c10 := c5 * t.c2i
-		c12i := 1 / (sqr(c7)/4 - t.c9)
+		c12i := 1 / (Sqr(c7)/4 - t.c9)
 		c13 := c7*t.c8/2 - c10
 
 		pz := c13 * c12i
 		qz := t.c14 * c12i
-		discz := sqr(pz)/4 - qz
+		discz := Sqr(pz)/4 - qz
 
 		if discz < 0 {
 			return false, 0, NoDirection, Color{}
@@ -184,13 +186,13 @@ func (t *BoneTracer) traceImpl(x, y float64, backside bool) (bool, float64, Vect
 	if f <= 0 || f >= 1 {
 		f = math.Min(1, math.Max(0, f))
 		pz := c3*f + c5
-		qz := t.c2*sqr(f) + t.c4*f + t.c6
-		discz := sqr(pz)/4 - qz
+		qz := t.c2*Sqr(f) + t.c4*f + t.c6
+		discz := Sqr(pz)/4 - qz
 		if discz < 0 {
 			f = 1 - f
 			pz = c3*f + c5
-			qz = t.c2*sqr(f) + t.c4*f + t.c6
-			discz = sqr(pz)/4 - qz
+			qz = t.c2*Sqr(f) + t.c4*f + t.c6
+			discz = Sqr(pz)/4 - qz
 
 			if discz < 0 {
 				return false, 0, NoDirection, Color{}
@@ -252,17 +254,17 @@ func NewBoneTracer(b1, b2 BallProjection) *BoneTracer {
 	t.ra = float64(r1)
 	t.dr = float64(r2 - r1)
 
-	t.c2 = -sqr(t.dr) + sqr(t.w1) + sqr(t.w2) + sqr(t.w3)
+	t.c2 = -Sqr(t.dr) + Sqr(t.w1) + Sqr(t.w2) + Sqr(t.w3)
 	if t.c2 != 0 {
 		t.c2i = 1 / t.c2
 	}
 
 	t.c4 = -2*t.ra*t.dr + 2*(t.a1*t.w1+t.a2*t.w2+t.a3*t.w3)
-	t.c6 = -sqr(t.ra) + sqr(t.a1) + sqr(t.a2) + sqr(t.a3)
+	t.c6 = -Sqr(t.ra) + Sqr(t.a1) + Sqr(t.a2) + Sqr(t.a3)
 	t.c8 = t.c4 / t.c2
 	t.c9 = 1 / t.c2
 	t.c11 = t.c6 / t.c2
-	t.c14 = sqr(t.c8)/4 - t.c11
+	t.c14 = Sqr(t.c8)/4 - t.c11
 
 	return t
 }

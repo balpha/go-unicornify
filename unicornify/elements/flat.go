@@ -1,6 +1,8 @@
-package unicornify
+package elements
 
-import ()
+import (
+	. "bitbucket.org/balpha/go-unicornify/unicornify/core"
+)
 
 type FlatTracer struct {
 	p1, p2, p3  BallProjection
@@ -14,9 +16,9 @@ type FlatTracer struct {
 
 func NewFlatTracer(wv WorldView, b1, b2, b3 *Ball, fourCorners bool, fourthColor Color, roughDirection Vector) *FlatTracer {
 	t := &FlatTracer{
-		p1:          wv.ProjectBall(b1),
-		p2:          wv.ProjectBall(b2),
-		p3:          wv.ProjectBall(b3),
+		p1:          ProjectBall(wv, b1),
+		p2:          ProjectBall(wv, b2),
+		p3:          ProjectBall(wv, b3),
 		wv:          wv,
 		fourCorners: fourCorners,
 	}
@@ -31,7 +33,7 @@ func NewFlatTracer(wv WorldView, b1, b2, b3 *Ball, fourCorners bool, fourthColor
 	if fourCorners {
 		t.fourthColor = fourthColor
 		b4 := NewBallP(b1.Center.Plus(b2.Center.Minus(b1.Center)).Plus(b3.Center.Minus(b1.Center)), 0, Color{})
-		p4 := wv.ProjectBall(b4)
+		p4 := ProjectBall(wv, b4)
 		bounds = bounds.Union(RenderingBoundsForBalls(p4))
 	}
 	t.bounds = bounds

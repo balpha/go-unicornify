@@ -1,6 +1,10 @@
 package unicornify
 
-import "math"
+import (
+	. "bitbucket.org/balpha/go-unicornify/unicornify/core"
+	. "bitbucket.org/balpha/go-unicornify/unicornify/elements"
+	"math"
+)
 
 type Unicorn struct {
 	Figure

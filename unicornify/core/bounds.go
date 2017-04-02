@@ -1,4 +1,4 @@
-package unicornify
+package core
 
 import (
 	"image"
@@ -52,23 +52,6 @@ func (b Bounds) Intersect(o Bounds) Bounds {
 	return res
 }
 
-func RenderingBoundsForBalls(bps ...BallProjection) Bounds {
-	res := EmptyBounds
-	for _, bp := range bps {
-		r := Bounds{
-			XMin:  bp.X() - bp.ProjectedRadius,
-			XMax:  bp.X() + bp.ProjectedRadius,
-			YMin:  bp.Y() - bp.ProjectedRadius,
-			YMax:  bp.Y() + bp.ProjectedRadius,
-			ZMin:  bp.Z() - bp.BaseBall.Radius,
-			ZMax:  bp.Z() + bp.BaseBall.Radius,
-			Empty: false,
-		}
-		res = res.Union(r)
-	}
-	return res
-}
-
 func (b Bounds) ContainsXY(x, y float64) bool {
 	return !b.Empty && x >= b.XMin && x <= b.XMax && y >= b.YMin && y <= b.YMax
 }
@@ -93,7 +76,7 @@ func (b Bounds) ToRect() image.Rectangle {
 	if b.Empty {
 		return image.Rect(0, 0, 0, 0)
 	}
-	return image.Rect(roundDown(b.XMin), roundDown(b.YMin), roundUp(b.XMax), roundUp(b.YMax))
+	return image.Rect(RoundDown(b.XMin), RoundDown(b.YMin), RoundUp(b.XMax), RoundUp(b.YMax))
 }
 func (b Bounds) MidPoint() Vector {
 	if b.Empty {
