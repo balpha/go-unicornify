@@ -72,7 +72,6 @@ func (b *Bone) GetTracer(wv WorldView) Tracer {
 		prevBall := proj1
 
 		result := NewGroupTracer()
-		subgroup := NewGroupTracer()
 
 		nextBall := calcBall(1 / float64(parts))
 
@@ -89,17 +88,12 @@ func (b *Bone) GetTracer(wv WorldView) Tracer {
 			}
 
 			tracer := NewBoneTracer(prevBall, curBall)
-
-			subgroup.Add(tracer)
-
-			if i%5 == 0 || i == parts {
-				result.Add(subgroup)
-				subgroup = NewGroupTracer()
-			}
+			
+			result.Add(tracer)
 
 			prevBall = curBall
 		}
-
+		result.SubdivideAndSort()
 		return result
 
 	}
