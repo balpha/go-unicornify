@@ -1,6 +1,6 @@
 package core
 
-import ()
+import ("math")
 
 type WorldView struct {
 	CameraPosition Vector
@@ -42,22 +42,19 @@ func (wv WorldView) ProjectSphere(center Vector, radius float64) SphereProjectio
 		}
 
 		closestToCam := wv.CameraPosition.Plus(cam2c.Times(1 - radius/cam2c.Length()))
-		xdir := 1.0
-		ydir := 1.0
-		if projection.X() < 0 {
-			xdir = -1
+
+		u1, u2 := CrossAxes(cam2c.Unit())
+		r := 0.0
+		for c1:=-1.0; c1 <=1; c1+=2 {
+			for c2:=-1.0; c2 <=1; c2+=2 {
+				p:= closestToCam.Plus(u1.Times(c1*radius)).Plus(u2.Times(c2*radius))
+				pr := wv.ProjectSphere(p, 0)
+				r = math.Max(r, math.Abs(pr.X()-projection.X()))
+				r = math.Max(r, math.Abs(pr.Y()-projection.Y()))
+			}
 		}
-		if projection.Y() < 0 {
-			ydir = -1
-		}
-
-		secondPoint := closestToCam.Plus(wv.ux.Times(xdir * radius)).Plus(wv.uy.Times(ydir * radius))
-
-		p1 := wv.ProjectSphere(closestToCam, 0)
-		p2 := wv.ProjectSphere(secondPoint, 0)
-
-		projection.ProjectedRadius = p1.ProjectedCenterCS.Minus(p2.ProjectedCenterCS).Length()
-
+		
+		projection.ProjectedRadius = r
 		return projection
 
 	}
