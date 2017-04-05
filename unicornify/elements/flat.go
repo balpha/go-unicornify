@@ -26,7 +26,10 @@ func NewFlatTracer(wv WorldView, b1, b2, b3 *Ball, fourCorners bool, fourthColor
 	t.w2 = t.p3.CenterCS.Minus(t.p1.CenterCS)
 
 	t.dir = t.w1.CrossProd(t.w2)
-	if t.dir.ScalarProd(roughDirection) < 0 {
+	p := Vector{0, 0, 10000} // FIXME
+	pp := wv.ProjectSphere(p, 0).CenterCS
+	roughDirCS := wv.ProjectSphere(p.Plus(roughDirection), 0).CenterCS.Minus(pp)
+	if t.dir.ScalarProd(roughDirCS) < 0 {
 		t.dir = t.dir.Neg()
 	}
 	bounds := RenderingBoundsForBalls(t.p1, t.p2, t.p3)
