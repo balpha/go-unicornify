@@ -43,6 +43,10 @@ func (b *Ball) SetGap(gap float64, other Ball) {
 	b.SetDistance(b.Radius+other.Radius+gap, other)
 }
 
+func (b *Ball) Shift(d Vector) {
+	b.Center = b.Center.Plus(d)
+}
+
 func (b *Ball) MoveToBone(bone Bone) {
 	b1 := bone.Balls[0]
 	b2 := bone.Balls[1]

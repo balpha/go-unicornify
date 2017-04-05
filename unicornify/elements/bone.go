@@ -88,7 +88,7 @@ func (b *Bone) GetTracer(wv WorldView) Tracer {
 			}
 
 			tracer := NewBoneTracer(prevBall, curBall)
-			
+
 			result.Add(tracer)
 
 			prevBall = curBall

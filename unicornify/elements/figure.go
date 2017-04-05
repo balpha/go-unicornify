@@ -30,6 +30,12 @@ func (f *Figure) Scale(factor float64) {
 	}
 }
 
+func (f *Figure) Shift(delta Vector) {
+	for b := range f.BallSet() {
+		b.Shift(delta)
+	}
+}
+
 func (f *Figure) BallSet() <-chan *Ball {
 	seen := make(map[*Ball]bool)
 	ch := make(chan *Ball)
@@ -49,6 +55,10 @@ func ballSetImpl(t Thing, seen map[*Ball]bool, ch chan *Ball, outer bool) {
 		ballSetImpl(t.Balls[1], seen, ch, false)
 	case *Figure:
 		for _, s := range t.things {
+			ballSetImpl(s, seen, ch, false)
+		}
+	case *Steak:
+		for _, s := range t.Balls {
 			ballSetImpl(s, seen, ch, false)
 		}
 	default:

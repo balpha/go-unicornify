@@ -67,6 +67,14 @@ func (p Vector) Neg() Vector {
 	}
 }
 
+func (p Vector) BetweenThisAnd(other Vector, f float64) Vector {
+	return p.Plus(other.Minus(p).Times(f))
+}
+
+func (p Vector) HalfWayTo(other Vector) Vector {
+	return p.BetweenThisAnd(other, 0.5)
+}
+
 func (p Vector) Decompose() (x, y, z float64) {
 	return p[0], p[1], p[2]
 }
