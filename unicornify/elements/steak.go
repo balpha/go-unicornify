@@ -58,7 +58,7 @@ func NewSteakTracer(wv WorldView, b1, b2, b3 *Ball, fourCorners bool, fourthColo
 	}
 
 	add(!fourCorners, NewBallP(top1, 0, col1), NewBallP(top1.Plus(w12), 0, col2), NewBallP(top1.Plus(w13), 0, col3), fourthColor, cross)
-	add(!fourCorners, NewBallP(bottom1, 0, col1), NewBallP(bottom1.Plus(w12), 0, col2), NewBallP(bottom1.Plus(w13), 0, col3), fourthColor, cross)
+	add(!fourCorners, NewBallP(bottom1, 0, col1), NewBallP(bottom1.Plus(w12), 0, col2), NewBallP(bottom1.Plus(w13), 0, col3), fourthColor, cross.Neg())
 	add(false, NewBallP(top1, 0, col1), NewBallP(bottom1, 0, col1), NewBallP(top1.Plus(w12), 0, col2), col2, w13.Neg())
 	add(false, NewBallP(top1, 0, col1), NewBallP(bottom1, 0, col1), NewBallP(top1.Plus(w13), 0, col3), col3, w12.Neg())
 
