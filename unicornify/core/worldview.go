@@ -42,7 +42,16 @@ func (wv WorldView) ProjectSphere(center Vector, radius float64) SphereProjectio
 		}
 
 		closestToCam := wv.CameraPosition.Plus(cam2c.Times(1 - radius/cam2c.Length()))
-		secondPoint := closestToCam.Plus(wv.uy.Times(radius))
+		xdir := 1.0
+		ydir := 1.0
+		if projection.X() < 0 {
+			xdir = -1
+		}
+		if projection.Y() < 0 {
+			ydir = -1
+		}
+
+		secondPoint := closestToCam.Plus(wv.ux.Times(xdir * radius)).Plus(wv.uy.Times(ydir * radius))
 
 		p1 := wv.ProjectSphere(closestToCam, 0)
 		p2 := wv.ProjectSphere(secondPoint, 0)
