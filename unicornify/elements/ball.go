@@ -74,7 +74,7 @@ func RenderingBoundsForBalls(bps ...BallProjection) Bounds {
 			XMax:  bp.X() + bp.ProjectedRadius,
 			YMin:  bp.Y() - bp.ProjectedRadius,
 			YMax:  bp.Y() + bp.ProjectedRadius,
-			ZMin:  bp.Z() - bp.BaseBall.Radius,
+			ZMin:  bp.CenterCS.Z() - bp.BaseBall.Radius,
 			ZMax:  bp.Z() + bp.BaseBall.Radius,
 			Empty: false,
 		}
