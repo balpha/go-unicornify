@@ -1,6 +1,8 @@
 package core
 
-import ("math")
+import (
+	"math"
+)
 
 type WorldView struct {
 	CameraPosition Vector
@@ -36,7 +38,15 @@ func (wv WorldView) ProjectSphere(center Vector, radius float64) SphereProjectio
 			ProjectedCenterCS: Vector{intf[0], intf[1], wv.FocalLength},
 			WorldView:         wv,
 		}
-		projection.CenterCS = projection.ProjectedCenterCS.Times(cam2c.Length() / projection.ProjectedCenterCS.Length())
+		dir := 1.0
+		if intf[2] < 0 {
+			dir = -1
+		}
+		projection.CenterCS = projection.ProjectedCenterCS.Times(dir * cam2c.Length() / projection.ProjectedCenterCS.Length())
+		if intf[2] < 0 {
+			projection.ProjectedCenterCS[0] *= -1
+			projection.ProjectedCenterCS[1] *= -1
+		}
 		if radius == 0 {
 			return projection
 		}
@@ -45,15 +55,15 @@ func (wv WorldView) ProjectSphere(center Vector, radius float64) SphereProjectio
 
 		u1, u2 := CrossAxes(cam2c.Unit())
 		r := 0.0
-		for c1:=-1.0; c1 <=1; c1+=2 {
-			for c2:=-1.0; c2 <=1; c2+=2 {
-				p:= closestToCam.Plus(u1.Times(c1*radius)).Plus(u2.Times(c2*radius))
+		for c1 := -1.0; c1 <= 1; c1 += 2 {
+			for c2 := -1.0; c2 <= 1; c2 += 2 {
+				p := closestToCam.Plus(u1.Times(c1 * radius)).Plus(u2.Times(c2 * radius))
 				pr := wv.ProjectSphere(p, 0)
 				r = math.Max(r, math.Abs(pr.X()-projection.X()))
 				r = math.Max(r, math.Abs(pr.Y()-projection.Y()))
 			}
 		}
-		
+
 		projection.ProjectedRadius = r
 		return projection
 

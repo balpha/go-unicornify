@@ -54,7 +54,7 @@ func (t *FlatTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
 
 func (t *FlatTracer) TraceRay(ray Vector) (bool, float64, Vector, Color) {
 	ok, inter := IntersectionOfPlaneAndLine(t.p1.CenterCS, t.w1, t.w2, Vector{0, 0, 0}, ray)
-	if !ok {
+	if !ok || inter[2] < 0 {
 		return false, 0, NoDirection, Color{}
 	}
 	if inter[0] < 0 || inter[0] > 1 || inter[1] < 0 || inter[1] > 1 {

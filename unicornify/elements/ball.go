@@ -73,11 +73,15 @@ type BallProjection struct {
 func RenderingBoundsForBalls(bps ...BallProjection) Bounds {
 	res := EmptyBounds
 	for _, bp := range bps {
+		x, y := bp.X(), bp.Y()
+		if bp.CenterCS.Z() < 0 {
+			x, y = bp.CenterCS.X(), bp.CenterCS.Y()
+		}
 		r := Bounds{
-			XMin:  bp.X() - bp.ProjectedRadius,
-			XMax:  bp.X() + bp.ProjectedRadius,
-			YMin:  bp.Y() - bp.ProjectedRadius,
-			YMax:  bp.Y() + bp.ProjectedRadius,
+			XMin:  x - bp.ProjectedRadius,
+			XMax:  x + bp.ProjectedRadius,
+			YMin:  y - bp.ProjectedRadius,
+			YMax:  y + bp.ProjectedRadius,
 			ZMin:  bp.CenterCS.Z() - bp.BaseBall.Radius,
 			ZMax:  bp.Z() + bp.BaseBall.Radius,
 			Empty: false,

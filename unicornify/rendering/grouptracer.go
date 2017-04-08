@@ -25,11 +25,14 @@ func (gt *GroupTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
 		if !b.ContainsXY(x, y) {
 			continue
 		}
+		if b.ZMax <= 0 {
+			continue
+		}
 		if any && !b.ContainsPointsInFrontOfZ(minz) {
 			continue
 		}
 		ok, z, thisdir, thiscol := t.Trace(x, y)
-		if ok {
+		if ok && z > 0 {
 			if !any || z < minz {
 				col = thiscol
 				minz = z
@@ -45,11 +48,15 @@ func (t *GroupTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 	result := TraceIntervals{}
 	any := false
 	for _, t := range t.tracers {
-		if !t.GetBounds().ContainsXY(x, y) {
+		b := t.GetBounds()
+		if !b.ContainsXY(x, y) {
+			continue
+		}
+		if b.ZMax <= 0 {
 			continue
 		}
 		ok, is := t.TraceDeep(x, y)
-		if ok {
+		if ok && is[0].Start.Z > 0 {
 			any = true
 			result = result.Union(is)
 		}
