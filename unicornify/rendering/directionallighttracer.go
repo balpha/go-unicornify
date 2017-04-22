@@ -5,13 +5,13 @@ import (
 )
 
 type DirectionalLightTracer struct {
-	GroupTracer
+	SourceTracer       Tracer
 	LightDirectionUnit Vector
 	Lighten, Darken    float64
 }
 
-func (t *DirectionalLightTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
-	ok, z, dir, col := t.GroupTracer.Trace(x, y)
+func (t *DirectionalLightTracer) Trace(x, y float64, ray Vector) (bool, float64, Vector, Color) {
+	ok, z, dir, col := t.SourceTracer.Trace(x, y, ray)
 	if !ok {
 		return ok, z, dir, col
 	}
@@ -32,13 +32,30 @@ func (t *DirectionalLightTracer) Trace(x, y float64) (bool, float64, Vector, Col
 	return ok, z, dir, col
 }
 
-func (t *DirectionalLightTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
-	return DeepifyTrace(t, x, y)
+func (t *DirectionalLightTracer) TraceDeep(x, y float64, ray Vector) (bool, TraceIntervals) {
+	return DeepifyTrace(t, x, y, ray)
 }
 
-func (t *DirectionalLightTracer) Add(ts ...Tracer) {
-	t.GroupTracer.Add(ts...)
+func (t *DirectionalLightTracer) GetBounds() Bounds {
+	return t.SourceTracer.GetBounds()
 }
+
+func (t *DirectionalLightTracer) Pruned(rp RenderingParameters) Tracer {
+	prunedSource := t.SourceTracer.Pruned(rp)
+	if prunedSource == nil {
+		return nil
+	} else if prunedSource == t.SourceTracer {
+		return t
+	} else {
+		return &DirectionalLightTracer{
+			prunedSource,
+			t.LightDirectionUnit,
+			t.Lighten,
+			t.Darken,
+		}
+	}
+}
+
 func (t *DirectionalLightTracer) SetLightDirection(dir Vector) {
 	length := dir.Length()
 	if length != 0 {
@@ -47,8 +64,8 @@ func (t *DirectionalLightTracer) SetLightDirection(dir Vector) {
 	t.LightDirectionUnit = dir
 }
 
-func NewDirectionalLightTracer(lightDirection Vector, lighten, darken float64) *DirectionalLightTracer {
-	result := &DirectionalLightTracer{Lighten: lighten, Darken: darken}
+func NewDirectionalLightTracer(source Tracer, lightDirection Vector, lighten, darken float64) *DirectionalLightTracer {
+	result := &DirectionalLightTracer{SourceTracer: source, Lighten: lighten, Darken: darken}
 	result.SetLightDirection(lightDirection)
 	return result
 }

@@ -43,16 +43,15 @@ func NewFlatTracer(wv WorldView, b1, b2, b3 *Ball, fourCorners bool, fourthColor
 	return t
 }
 
-func (t *FlatTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
-	return DeepifyTrace(t, x, y)
+func (t *FlatTracer) TraceDeep(x, y float64, ray Vector) (bool, TraceIntervals) {
+	return DeepifyTrace(t, x, y, ray)
 }
 
-func (t *FlatTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
-	v := Vector{x, y, t.wv.FocalLength}.Unit()
-	return t.TraceRay(v)
+func (t *FlatTracer) Pruned(rp RenderingParameters) Tracer {
+	return SimplyPruned(t, rp) //FIXME
 }
 
-func (t *FlatTracer) TraceRay(ray Vector) (bool, float64, Vector, Color) {
+func (t *FlatTracer) Trace(x, y float64, ray Vector) (bool, float64, Vector, Color) {
 	ok, inter := IntersectionOfPlaneAndLine(t.p1.CenterCS, t.w1, t.w2, Vector{0, 0, 0}, ray)
 	if !ok || inter[2] < 0 {
 		return false, 0, NoDirection, Color{}

@@ -19,7 +19,6 @@ func (f *Figure) GetTracer(wv WorldView) Tracer {
 	for _, th := range f.things {
 		gt.Add(th.GetTracer(wv))
 	}
-	gt.SubdivideAndSort()
 	return gt
 }
 

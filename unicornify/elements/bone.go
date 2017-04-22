@@ -93,9 +93,7 @@ func (b *Bone) GetTracer(wv WorldView) Tracer {
 
 			prevBall = curBall
 		}
-		result.SubdivideAndSort()
 		return result
-
 	}
 }
 
@@ -110,12 +108,11 @@ func (t *BoneTracer) GetBounds() Bounds {
 	return t.bounds
 }
 
-func (t *BoneTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
-	return t.traceImpl(x, y, false)
+func (t *BoneTracer) Trace(x, y float64, ray Vector) (bool, float64, Vector, Color) {
+	return t.traceImpl(x, y, ray, false)
 }
-func (t *BoneTracer) traceImpl(x, y float64, backside bool) (bool, float64, Vector, Color) {
-	focalLength := t.b1.ProjectedCenterCS.Z()
-	v1, v2, v3 := Vector{x, y, focalLength}.Unit().Decompose()
+func (t *BoneTracer) traceImpl(x, y float64, ray Vector, backside bool) (bool, float64, Vector, Color) {
+	v1, v2, v3 := ray.Decompose()
 
 	c3 := -2 * (v1*t.w1 + v2*t.w2 + v3*t.w3)
 	c5 := -2 * (v1*t.a1 + v2*t.a2 + v3*t.a3)
@@ -211,9 +208,9 @@ func (t *BoneTracer) traceImpl(x, y float64, backside bool) (bool, float64, Vect
 
 }
 
-func (t *BoneTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
-	ok1, z1, dir1, col1 := t.traceImpl(x, y, false)
-	ok2, z2, dir2, col2 := t.traceImpl(x, y, true)
+func (t *BoneTracer) TraceDeep(x, y float64, ray Vector) (bool, TraceIntervals) {
+	ok1, z1, dir1, col1 := t.traceImpl(x, y, ray, false)
+	ok2, z2, dir2, col2 := t.traceImpl(x, y, ray, true)
 	if ok1 {
 		if !ok2 { // this can happen because of rounding errors
 			return false, TraceIntervals{}
@@ -226,6 +223,10 @@ func (t *BoneTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 		}
 	}
 	return false, TraceIntervals{}
+}
+
+func (t *BoneTracer) Pruned(rp RenderingParameters) Tracer {
+	return SimplyPruned(t, rp)
 }
 
 func NewBoneTracer(b1, b2 BallProjection) *BoneTracer {

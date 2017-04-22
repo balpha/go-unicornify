@@ -13,8 +13,8 @@ type PointLightTracer struct {
 	HalfLifes      []float64
 }
 
-func (t *PointLightTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
-	ok, z, dir, col := t.SourceTracer.Trace(x, y)
+func (t *PointLightTracer) Trace(x, y float64, ray Vector) (bool, float64, Vector, Color) {
+	ok, z, dir, col := t.SourceTracer.Trace(x, y, ray)
 	if !ok {
 		return ok, z, dir, col
 	}
@@ -56,12 +56,16 @@ func (t *PointLightTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
 	return ok, z, dir, col
 }
 
-func (t *PointLightTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
-	return DeepifyTrace(t, x, y)
+func (t *PointLightTracer) TraceDeep(x, y float64, ray Vector) (bool, TraceIntervals) {
+	return DeepifyTrace(t, x, y, ray)
 }
 
 func (t *PointLightTracer) GetBounds() Bounds {
 	return t.SourceTracer.GetBounds()
+}
+
+func (t *PointLightTracer) Pruned(rp RenderingParameters) Tracer {
+	return SimplyPruned(t, rp) //FIXME
 }
 
 func NewPointLightTracer(source Tracer, lightPos ...Vector) *PointLightTracer {

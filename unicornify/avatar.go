@@ -118,8 +118,8 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 	grassTracers := make([]Tracer, 0)
 
 	scaleAndShift := func(t Tracer) Tracer {
-		t = NewScalingTracer(t, Scale)
-		return NewTranslatingTracer(t, Shift[0], Shift[1])
+		t = NewScalingTracer(wv, t, Scale)
+		return NewTranslatingTracer(wv, t, Shift[0], Shift[1])
 	}
 
 	if grass {
@@ -156,7 +156,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 			groundtr = scaleAndShift(groundtr)
 			groundShadowImg = image.NewRGBA(image.Rect(0, 0, size, size))
 
-			DrawTracerParallel(groundtr, groundShadowImg, nil, 8)
+			DrawTracerParallel(groundtr, wv, groundShadowImg, nil, 8)
 		}
 
 		for _, l := range uni.Legs {
@@ -168,7 +168,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 			DrawGrass(gimg, grassdata, wv, groundShadowImg)
 			shinTracer := scaleAndShift(l.Shin.GetTracer(wv))
 			z := func(x, y float64) (bool, float64) {
-				ok, z, _, _ := shinTracer.Trace(x, y)
+				ok, z, _, _ := shinTracer.Trace(x, y, wv.Ray(x, y))
 				return ok, z - 1
 			}
 			tr := NewImageTracer(gimg, shinTracer.GetBounds(), z)
@@ -184,8 +184,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 		p := Vector{0, 0, 1000}
 		pp := wv.ProjectSphere(p, 0).CenterCS
 		ldp := wv.ProjectSphere(p.Plus(lightDirection), 0).CenterCS.Minus(pp)
-		lt := NewDirectionalLightTracer(ldp, 32, 80)
-		lt.Add(tracer)
+		lt := NewDirectionalLightTracer(tracer, ldp, 32, 80)
 
 		sc := NewShadowCastingTracer(lt, wv, uni, uni.Head.Center.Minus(lightDirection.Times(1000)), uni.Head.Center, 16, 16)
 		tracer = sc
@@ -205,9 +204,9 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 		if parts < 8 {
 			parts = 8
 		}
-		DrawTracerParallel(tracer, img, yCallback, parts)
+		DrawTracerParallel(tracer, wv, img, yCallback, parts)
 	} else {
-		DrawTracer(tracer, img, yCallback)
+		DrawTracer(tracer, wv, img, yCallback)
 	}
 
 	return nil, img

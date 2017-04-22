@@ -12,7 +12,7 @@ type ImageTracer struct {
 	z      func(x, y float64) (bool, float64)
 }
 
-func (t *ImageTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
+func (t *ImageTracer) Trace(x, y float64, ray Vector) (bool, float64, Vector, Color) {
 	if !t.bounds.ContainsXY(x, y) {
 		return false, 0, NoDirection, Black
 	}
@@ -26,8 +26,12 @@ func (t *ImageTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
 	return ok, z, NoDirection, Color{c.R, c.G, c.B}
 }
 
-func (t *ImageTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
-	return DeepifyTrace(t, x, y)
+func (t *ImageTracer) TraceDeep(x, y float64, ray Vector) (bool, TraceIntervals) {
+	return DeepifyTrace(t, x, y, ray)
+}
+
+func (t *ImageTracer) Pruned(rp RenderingParameters) Tracer {
+	return SimplyPruned(t, rp)
 }
 
 func (t *ImageTracer) GetBounds() Bounds {

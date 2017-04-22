@@ -8,9 +8,9 @@ type DifferenceTracer struct {
 	Base, Subtrahend Tracer
 }
 
-func (t *DifferenceTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
-	ok1, i1 := t.Base.TraceDeep(x, y)
-	ok2, i2 := t.Subtrahend.TraceDeep(x, y)
+func (t *DifferenceTracer) TraceDeep(x, y float64, ray Vector) (bool, TraceIntervals) {
+	ok1, i1 := t.Base.TraceDeep(x, y, ray)
+	ok2, i2 := t.Subtrahend.TraceDeep(x, y, ray)
 	if !ok1 {
 		return false, EmptyIntervals
 	}
@@ -25,8 +25,12 @@ func (t *DifferenceTracer) GetBounds() Bounds {
 	return t.Base.GetBounds()
 }
 
-func (t *DifferenceTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
-	return UnDeepifyTrace(t, x, y)
+func (t *DifferenceTracer) Pruned(rp RenderingParameters) Tracer {
+	return SimplyPruned(t, rp) //FIXME
+}
+
+func (t *DifferenceTracer) Trace(x, y float64, ray Vector) (bool, float64, Vector, Color) {
+	return UnDeepifyTrace(t, x, y, ray)
 }
 
 func NewDifferenceTracer(base, subtrahend Tracer) *DifferenceTracer {

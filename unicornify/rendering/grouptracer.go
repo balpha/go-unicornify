@@ -2,6 +2,7 @@ package rendering
 
 import (
 	. "bitbucket.org/balpha/go-unicornify/unicornify/core"
+	"math"
 	"sort"
 )
 
@@ -9,13 +10,14 @@ type GroupTracer struct {
 	tracers       []Tracer
 	bounds        Bounds
 	boundsCurrent bool
+	isSorted      bool
 }
 
 func NewGroupTracer() *GroupTracer {
 	return &GroupTracer{}
 }
 
-func (gt *GroupTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
+func (gt *GroupTracer) Trace(x, y float64, ray Vector) (bool, float64, Vector, Color) {
 	any := false
 	var minz float64 = 0.0
 	var col Color = Black
@@ -29,9 +31,12 @@ func (gt *GroupTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
 			continue
 		}
 		if any && !b.ContainsPointsInFrontOfZ(minz) {
+			if gt.isSorted {
+				break
+			}
 			continue
 		}
-		ok, z, thisdir, thiscol := t.Trace(x, y)
+		ok, z, thisdir, thiscol := t.Trace(x, y, ray)
 		if ok && z > 0 {
 			if !any || z < minz {
 				col = thiscol
@@ -44,7 +49,7 @@ func (gt *GroupTracer) Trace(x, y float64) (bool, float64, Vector, Color) {
 	return any, minz, dir, col
 }
 
-func (t *GroupTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
+func (t *GroupTracer) TraceDeep(x, y float64, ray Vector) (bool, TraceIntervals) {
 	result := TraceIntervals{}
 	any := false
 	for _, t := range t.tracers {
@@ -55,7 +60,7 @@ func (t *GroupTracer) TraceDeep(x, y float64) (bool, TraceIntervals) {
 		if b.ZMax <= 0 {
 			continue
 		}
-		ok, is := t.TraceDeep(x, y)
+		ok, is := t.TraceDeep(x, y, ray)
 		if ok && is[0].Start.Z > 0 {
 			any = true
 			result = result.Union(is)
@@ -85,50 +90,60 @@ func (gt *GroupTracer) Add(ts ...Tracer) {
 		gt.tracers = append(gt.tracers, t)
 	}
 	gt.boundsCurrent = false
+	gt.isSorted = false
 }
 
-func (gt *GroupTracer) SubdivideAndSort() {
-	const n = 2
-	const min = 5
-
-	subs := make([]*GroupTracer, n*n)
-	b := gt.GetBounds()
-	if b.Empty {
+func (gt *GroupTracer) flattenPrunedIntoFacets(rp RenderingParameters, ft *FacetTracer) {
+	if !rp.Contains(gt.GetBounds()) {
 		return
 	}
-	count := 0
 	for _, t := range gt.tracers {
-		mid := t.GetBounds().MidPoint()
-		bucketx := Round(float64(n-1) * (mid.X() - b.XMin) / b.Dx())
-		buckety := Round(float64(n-1) * (mid.Y() - b.YMin) / b.Dy())
-		bucket := bucketx + n*buckety
-		sub := subs[bucket]
-		if sub == nil {
-			sub = NewGroupTracer()
-			subs[bucket] = sub
-			count++
-		}
-		sub.Add(t)
-	}
-	if count == 1 {
-		sort.Sort(gt)
-		return
-	}
-	gt.tracers = make([]Tracer, 0, count)
-	for _, sub := range subs {
-		if sub == nil {
-			continue
-		}
-		if len(sub.tracers) < min {
-			for _, sst := range sub.tracers {
-				gt.Add(sst)
-			}
+		asGt, ok := t.(*GroupTracer)
+		if ok {
+			asGt.flattenPrunedIntoFacets(rp, ft)
 		} else {
-			sub.SubdivideAndSort()
-			gt.Add(sub)
+			pruned := t.Pruned(rp)
+			if pruned != nil {
+				prunedAsGt, ok := pruned.(*GroupTracer)
+				if ok {
+					prunedAsGt.flattenPrunedIntoFacets(rp, ft)
+				} else {
+					ft.Add(pruned)
+				}
+			}
 		}
 	}
+}
+
+func (gt *GroupTracer) Pruned(rp RenderingParameters) Tracer {
+	if !rp.Contains(gt.GetBounds()) {
+		return nil
+	}
+	var bounds Bounds
+	if math.IsInf(rp.XMin, 0) || math.IsInf(rp.XMax, 0) || math.IsInf(rp.YMin, 0) || math.IsInf(rp.YMax, 0) {
+		bounds = gt.GetBounds()
+	} else {
+		bounds = Bounds{
+			XMin: rp.XMin,
+			XMax: rp.XMax,
+			YMin: rp.YMin,
+			YMax: rp.YMax,
+			ZMin: gt.GetBounds().ZMin,
+			ZMax: gt.GetBounds().ZMax,
+		}
+	}
+	result := NewFacetTracer(bounds, 16)
+	gt.flattenPrunedIntoFacets(rp, result)
+	if result.IsEmpty() {
+		return nil
+	}
+	result.Sort()
+	return result
+}
+
+func (gt *GroupTracer) Sort() {
 	sort.Sort(gt)
+	gt.isSorted = true
 }
 
 func (gt *GroupTracer) Len() int {
