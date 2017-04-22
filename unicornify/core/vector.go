@@ -79,6 +79,23 @@ func (p Vector) Decompose() (x, y, z float64) {
 	return p[0], p[1], p[2]
 }
 
+func (p Vector) ProjectionOntoAxis(a1, a2 Vector) Vector {
+	a1p := p.Minus(a1)
+	ua := a2.Minus(a1).Unit()
+	sp := a1p.ScalarProd(ua)
+	return a1.Plus(ua.Times(sp))
+}
+
+func (p Vector) RotatedAroundAxis(a1, a2 Vector, angle float64) Vector {
+	// https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
+	v := p.Minus(a1)
+	k := a2.Minus(a1).Unit()
+	cos := math.Cos(angle)
+	sin := math.Sin(angle)
+	vrot := v.Times(cos).Plus(k.CrossProd(v).Times(sin)).Plus(k.Times(k.ScalarProd(v) * (1 - cos)))
+	return a1.Plus(vrot)
+}
+
 func (p Vector) RotatedAround(other Vector, angle float64, axis byte) Vector {
 	var swap, reverse [3]byte
 	switch axis {
