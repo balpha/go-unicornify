@@ -42,8 +42,8 @@ func DrawTracerPartial(t Tracer, wv WorldView, img *image.RGBA, yCallback func(i
 	r := bounds.Intersect(t.GetBounds().ToRect())
 	rp := RenderingParameters{
 		1,
-		float64(r.Min.X), float64(r.Max.X + 1),
-		float64(r.Min.Y), float64(r.Max.Y + 1),
+		float64(r.Min.X - 1), float64(r.Max.X + 1),
+		float64(r.Min.Y - 1), float64(r.Max.Y + 1),
 	}
 	pruned := t.Pruned(rp)
 	if pruned != nil {
