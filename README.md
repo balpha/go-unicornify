@@ -14,14 +14,9 @@ The website returns JPEGs with a maximum size of 128x128 pixels. This tool gives
 
 It also has a few nice extra options.
 
-# Installation
+# Download / Installation
 
-There's not much to install. You can either download one of these binaries:
-
-- [Download for Linux](https://github.com/balpha/go-unicornify/downloads/go-unicornify)
-- [Download for Windows](https://github.com/balpha/go-unicornify/downloads/go-unicornify.exe)
-
-from the [Downloads](https://github.com/balpha/go-unicornify/downloads) page (it's a single executable file, called `go-unicornify` on Linux  and `go-unicornify.exe` on Windows), or you can compile the program yourself (it is written in Go, a.k.a. golang).
+There's not much to install. You can either download one of the precompiled binaries from the [releases page](https://github.com/balpha/go-unicornify/releases) (the zip file contains a single executable file, called `unicornify` on Linux and Mac and `unicornify.exe` on Windows), or you can compile the program yourself (it is written in Go, a.k.a. golang).
 
 Please refer to the [LICENSE.txt](https://github.com/balpha/go-unicornify/src/tip/LICENSE.txt) file for redistribution information.
 
@@ -33,9 +28,9 @@ Unicorns are always generated based on a single (hexadecimal) number. Usually, t
 
 You have three options how to tell the program which Unicorn to render: With the `-m`, `-h`, and `-r` options.
 
-    ./go-unicornify -m mail@example.com
-    ./go-unicornify -h 7daf6c79d4802916d83f6266e24850af
-    ./go-unicornify -r
+    ./unicornify -m mail@example.com
+    ./unicornify -h 7daf6c79d4802916d83f6266e24850af
+    ./unicornify -r
 
 With `-m` you pass the email address you want to generate the avatar for, and the program will generate the hash number.
 
@@ -49,13 +44,13 @@ You must specify one (exactly one) of the above three. All the other following s
 
 By default, Go-Unicornify will save the unicorn image to a file called `{hexnumber}.png`, where {hexnumber} is the number the unicorn is generated from. To specify a different file name, use the `-o` switch:
 
-    ./go-unicornify -r -o awesome-unicorn.png
+    ./unicornify -r -o awesome-unicorn.png
 
 ## Image size
 
 Go-Unicornify always generates square images. You can specify the width (and thus height) you want with the `-s` switch:
 
-    ./go-unicornify -m mail@example.com -s 1024
+    ./unicornify -m mail@example.com -s 1024
 
 will generate a 1024x1024 pixel image.
 
@@ -67,20 +62,20 @@ By default, Go-Unicornify generates unicorns with some amount of shading, and wi
 
 Those two images were generated with these commands:
 
-    ./go-unicornify -h b50eb7b293596008ecbb108815f82d31 -s 400
-    ./go-unicornify -h b50eb7b293596008ecbb108815f82d31 -s 400 -noshading -nograss
+    ./unicornify -h b50eb7b293596008ecbb108815f82d31 -s 400
+    ./unicornify -h b50eb7b293596008ecbb108815f82d31 -s 400 -noshading -nograss
 
 ## Transparent background
 
 Unicorns want to be free! To render generate the unicorn without the background, e.g. for inserting it into another images, use the `-f` switch.
 
-    ./go-unicornify -m mail@example.com -f
+    ./unicornify -m mail@example.com -f
 
 ## Zoom out
 
 On some avatars, the unicorn is fully visible, on others, only the head may be shown. If your unicorn is not fully visible, but you need it in full (to print it on a T-Shirt maybe?), you can use the `-z` switch.
 
-    ./go-unicornify -m mail@example.com -z
+    ./unicornify -m mail@example.com -z
 
 You'll usually want to combine this with `-f`.
 
@@ -90,9 +85,9 @@ The following images show the effects of the `-f` and `-z` switches:
 
 The three pictures were generated, in order, with the following commands:
 
-    ./go-unicornify -o example.png -h 772b4415cd38c3af6b522087a6359194 -s 200
-    ./go-unicornify -o example.png -h 772b4415cd38c3af6b522087a6359194 -s 200 -f
-    ./go-unicornify -o example.png -h 772b4415cd38c3af6b522087a6359194 -s 200 -f -z
+    ./unicornify -o example.png -h 772b4415cd38c3af6b522087a6359194 -s 200
+    ./unicornify -o example.png -h 772b4415cd38c3af6b522087a6359194 -s 200 -f
+    ./unicornify -o example.png -h 772b4415cd38c3af6b522087a6359194 -s 200 -f -z
 
 ## Disable anti-aliasing
 
