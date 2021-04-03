@@ -1,10 +1,10 @@
 package unicornify
 
 import (
-	. "bitbucket.org/balpha/go-unicornify/unicornify/core"
-	. "bitbucket.org/balpha/go-unicornify/unicornify/elements"
-	. "bitbucket.org/balpha/go-unicornify/unicornify/rendering"
-	"bitbucket.org/balpha/gopyrand"
+	. "github.com/balpha/go-unicornify/unicornify/core"
+	. "github.com/balpha/go-unicornify/unicornify/elements"
+	. "github.com/balpha/go-unicornify/unicornify/rendering"
+	"github.com/balpha/gopyrand"
 	"image"
 	"math"
 )

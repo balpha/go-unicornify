@@ -25,13 +25,13 @@ THE SOFTWARE.
 gopyrand
 --------
 
-Go-Unicornify uses my gopyrand library from https://bitbucket.org/balpha/gopyrand/wiki/Home.
+Go-Unicornify uses my gopyrand library from https://github.com/balpha/gopyrand
 
 The original gopyrand code is MIT-licensed just like Go-Unicornify, but it
 (somewhat) contains third-party code. In particular, Go-Unicornify binaries
 have this code compiled in, and thus the third-party licenses apply.
 
-See https://bitbucket.org/balpha/gopyrand/src/tip/LICENSE.txt, which contains
+See https://github.com/balpha/gopyrand/src/tip/LICENSE.txt, which contains
 the following:
 
 

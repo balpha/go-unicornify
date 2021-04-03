@@ -1,8 +1,8 @@
 package unicornify
 
 import (
-	. "bitbucket.org/balpha/go-unicornify/unicornify/core"
-	"bitbucket.org/balpha/gopyrand"
+	. "github.com/balpha/go-unicornify/unicornify/core"
+	"github.com/balpha/gopyrand"
 	"image"
 	"image/color"
 	"math"

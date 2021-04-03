@@ -1,7 +1,7 @@
 package elements
 
 import (
-	. "bitbucket.org/balpha/go-unicornify/unicornify/core"
+	. "github.com/balpha/go-unicornify/unicornify/core"
 )
 
 type FlatTracer struct {

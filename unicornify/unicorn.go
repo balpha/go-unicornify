@@ -1,8 +1,8 @@
 package unicornify
 
 import (
-	. "bitbucket.org/balpha/go-unicornify/unicornify/core"
-	. "bitbucket.org/balpha/go-unicornify/unicornify/elements"
+	. "github.com/balpha/go-unicornify/unicornify/core"
+	. "github.com/balpha/go-unicornify/unicornify/elements"
 	"math"
 )
 
