@@ -17,7 +17,7 @@ import (
 
 func main() {
 	var mail, hash string
-	var random, free, zoomOut, nodouble, shading, grass, serial bool
+	var random, free, zoomOut, nodouble, noshading, nograss, serial bool
 	var size int
 	var outfile string
 
@@ -26,11 +26,11 @@ func main() {
 	flag.BoolVar(&random, "r", false, "generate a random unicorn avatar")
 	flag.IntVar(&size, "s", 256, "the size of the generated unicorn avatar in pixels (in either direction)")
 	flag.StringVar(&outfile, "o", "", "filename of the output PNG image, defaults to {hash}.png")
-	flag.BoolVar(&free, "f", false, "generate a free unicorn avatar, i.e. with a transparent background")
+	flag.BoolVar(&free, "f", false, "generate a free unicorn avatar, i.e. with a transparent background (implies -nograss)")
 	flag.BoolVar(&zoomOut, "z", false, "zoom out, so the unicorn is fully visible")
 	flag.BoolVar(&nodouble, "noaa", false, "no antialiasing")
-	flag.BoolVar(&shading, "shading", false, "add shading that gives the unicorns more depth")
-	flag.BoolVar(&grass, "grass", false, "add grass to the ground")
+	flag.BoolVar(&noshading, "noshading", false, "do not add shading, this will make unicorns look flatter")
+	flag.BoolVar(&nograss, "nograss", false, "do not add grass to the ground")
 	flag.BoolVar(&serial, "serial", false, "do not parallelize the drawing")
 
 	flag.Parse()
@@ -77,7 +77,7 @@ func main() {
 		fmt.Printf("\r%v%%    ", perc)
 	}
 
-	err, img := unicornify.MakeAvatar(hash, actualSize, !free, zoomOut, shading, grass, !serial, yCallback)
+	err, img := unicornify.MakeAvatar(hash, actualSize, !free, zoomOut, !noshading, !nograss && !free, !serial, yCallback)
 	fmt.Print("\r    \r")
 	if err != nil {
 		os.Stderr.WriteString("Not a valid hexadecimal number: " + hash + "\n")

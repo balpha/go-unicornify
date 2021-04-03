@@ -27,7 +27,7 @@ Please refer to the [LICENSE.txt](https://github.com/balpha/go-unicornify/src/ti
 
 # Usage
 
-##Specifying the unicorn
+## Specifying the unicorn
 
 Unicorns are always generated based on a single (hexadecimal) number. Usually, this number is generated from an email address (by taking the MD5 hash, [just like Gravatar](https://en.gravatar.com/site/implement/hash/)). For example, the number corresponding to the address mail@example.com is 7daf6c79d4802916d83f6266e24850af.
 
@@ -61,20 +61,20 @@ will generate a 1024x1024 pixel image.
 
 ## Shading & grass
 
-By default, Go-Unicornify generates the "classic" style images that look fairly flat. With the `-shading` and `-grass` parameters, the pictures get much more depth. Compare:
+By default, Go-Unicornify generates unicorns with some amount of shading, and with grass on the ground. If you want the "classic" (legacy) style images that look fairly flat, you can use the `-noshading` and `-nograss` parameters. Compare:
 
-![](https://i.imgur.com/sa9pfwu.png) ![](https://i.imgur.com/KpQvoZ4.png)
+![](https://i.imgur.com/KpQvoZ4.png) ![](https://i.imgur.com/sa9pfwu.png)
 
 Those two images were generated with these commands:
 
     ./go-unicornify -h b50eb7b293596008ecbb108815f82d31 -s 400
-    ./go-unicornify -h b50eb7b293596008ecbb108815f82d31 -s 400 -shading -grass
+    ./go-unicornify -h b50eb7b293596008ecbb108815f82d31 -s 400 -noshading -nograss
 
 ## Transparent background
 
 Unicorns want to be free! To render generate the unicorn without the background, e.g. for inserting it into another images, use the `-f` switch.
 
-    ./go-unicornify -m mail@example.com -shading -f
+    ./go-unicornify -m mail@example.com -f
 
 ## Zoom out
 
@@ -90,9 +90,9 @@ The following images show the effects of the `-f` and `-z` switches:
 
 The three pictures were generated, in order, with the following commands:
 
-    ./go-unicornify -o example.png -h 772b4415cd38c3af6b522087a6359194 -s 200 -shading -grass
-    ./go-unicornify -o example.png -h 772b4415cd38c3af6b522087a6359194 -s 200 -shading -f
-    ./go-unicornify -o example.png -h 772b4415cd38c3af6b522087a6359194 -s 200 -shading -f -z
+    ./go-unicornify -o example.png -h 772b4415cd38c3af6b522087a6359194 -s 200
+    ./go-unicornify -o example.png -h 772b4415cd38c3af6b522087a6359194 -s 200 -f
+    ./go-unicornify -o example.png -h 772b4415cd38c3af6b522087a6359194 -s 200 -f -z
 
 ## Disable anti-aliasing
 
