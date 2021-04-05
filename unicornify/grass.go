@@ -8,20 +8,14 @@ import (
 )
 
 type GrassData struct {
-	Seed                            uint32
-	RowSeedAdd                      uint32
-	Horizon                         float64
-	BladeHeightFar, BladeHeightNear float64 // 0-1-based, relative to image width/height
-	Wind                            float64
-	Color1, Color2                  Color
-	MinBottomY                      float64 // pixel
+	Horizon        float64
+	Wind           float64
+	Color1, Color2 Color
 }
 
 func (d *GrassData) Randomize(rand *pyrand.Random) {
-	r := rand.RandBits(64)
-	d.Seed = r[0]
-	d.RowSeedAdd = r[1]
-	d.Wind = 1.6*rand.Random() - 0.8
+	_ = rand.RandBits(64)
+	d.Wind = 1.6*rand.Random() - 0.8 // not yet used
 }
 
 func GrassSandwich(groundY float64, bgdata BackgroundData, grassdata GrassData, shift Point2d, scale float64, imageSize int, wv WorldView) Thing {

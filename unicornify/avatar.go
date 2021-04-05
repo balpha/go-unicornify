@@ -41,10 +41,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 	data.Randomize3(rand)
 	grassdata.Randomize(rand)
 
-	grassSlope := 2 + 4*(20-xAngle/DEGREE)/40
-	grassScale := 1 + (unicornScaleFactor-0.5)/2.5
-	grassdata.BladeHeightNear = (0.02 + 0.02*rand.Random()) * grassScale
-	grassdata.BladeHeightFar = grassdata.BladeHeightNear / grassSlope
+	_ = rand.Random()
 
 	focalLength := 250 + rand.Random()*250
 
