@@ -51,28 +51,35 @@ func (t *FlatTracer) Pruned(rp RenderingParameters) Tracer {
 	return SimplyPruned(t, rp) //FIXME
 }
 
-func (t *FlatTracer) Trace(x, y float64, ray Vector) (bool, float64, Vector, Color) {
+func (t *FlatTracer) TraceToIntersection(x, y float64, ray Vector) (bool, float64, float64, float64) {
 	ok, inter := IntersectionOfPlaneAndLine(t.p1.CenterCS, t.w1, t.w2, Vector{0, 0, 0}, ray)
 	if !ok || inter[2] < 0 {
-		return false, 0, NoDirection, Color{}
+		return false, 0, 0, 0
 	}
 	if inter[0] < 0 || inter[0] > 1 || inter[1] < 0 || inter[1] > 1 {
-		return false, 0, NoDirection, Color{}
+		return false, 0, 0, 0
 	}
 	if !t.fourCorners && inter[0]+inter[1] > 1 {
-		return false, 0, NoDirection, Color{}
+		return false, 0, 0, 0
 	}
 	z := inter[2]
+	return true, inter[0], inter[1], z
+}
 
+func (t *FlatTracer) Trace(x, y float64, ray Vector) (bool, float64, Vector, Color) {
+	ok, i1, i2, z := t.TraceToIntersection(x, y, ray)
+	if !ok {
+		return false, 0, NoDirection, Color{}
+	}
 	var col Color
 	if t.fourCorners {
-		col = MixColors(MixColors(t.p1.BaseBall.Color, t.p2.BaseBall.Color, inter[0]), MixColors(t.p3.BaseBall.Color, t.fourthColor, inter[0]), inter[1])
+		col = MixColors(MixColors(t.p1.BaseBall.Color, t.p2.BaseBall.Color, i1), MixColors(t.p3.BaseBall.Color, t.fourthColor, i1), i2)
 	} else {
 		f1 := 1.0
-		if inter[1] < 1 {
-			f1 = inter[0] / (1 - inter[1])
+		if i2 < 1 {
+			f1 = i1 / (1 - i2)
 		}
-		col = MixColors(MixColors(t.p1.BaseBall.Color, t.p2.BaseBall.Color, f1), t.p3.BaseBall.Color, inter[1])
+		col = MixColors(MixColors(t.p1.BaseBall.Color, t.p2.BaseBall.Color, f1), t.p3.BaseBall.Color, i2)
 	}
 	return true, z, t.dir, col
 }

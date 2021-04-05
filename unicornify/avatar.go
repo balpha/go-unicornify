@@ -122,63 +122,144 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 		return NewTranslatingTracer(wv, t, Shift[0], Shift[1])
 	}
 
+	uniAndMaybeGrass := &Figure{}
+	uniAndMaybeGrass.Add(uni)
+
 	if grass {
-		shins := make(map[Thing]int)
-		ymax := -99999.0
-		ymaxproj := -99999.0
-		for i, l := range uni.Legs {
-			shins[l.Shin] = i
-			if l.Hoof.Center.Y() > ymax {
-				ymax = l.Hoof.Center.Y()
-			}
-			ymaxproj = math.Max(ymaxproj, ProjectBall(wv, l.Hoof).Y())
-		}
-		shiftedY := ymaxproj*Scale + Shift[1]
-		hoofHorizonDist := (shiftedY/fsize - bgdata.Horizon) / (1 - bgdata.Horizon) // 0 = bottom foot at horizon
-		if hoofHorizonDist < 0.5 {
-			gf := 1 + (1-hoofHorizonDist/0.5)*2
-			grassdata.BladeHeightFar *= gf
-			grassdata.BladeHeightNear *= gf
-		}
+		var grassSize float64 = 20000
+		var bladeDistance float64 = 3
+		var bladeDiameter float64 = 2
 
-		var groundShadowImg *image.RGBA
-		if shading {
-			ground := NewSteak(
-				NewBall(-400, ymax+uni.Legs[0].Hoof.Radius+1, -400, 1, Color{128, 128, 128}),
-				NewBall(700, ymax+uni.Legs[0].Hoof.Radius+1, -400, 1, Color{128, 128, 128}),
-				NewBall(-400, ymax+uni.Legs[0].Hoof.Radius+1, 400, 1, Color{128, 128, 128}),
-			)
-			ground.FourCorners = true
-			ground.FourthColor = Color{128, 128, 128}
-			ground.Rounded = false
-			groundtr := ground.GetTracer(wv)
-			groundtr = NewShadowCastingTracer(groundtr, wv, uni, uni.Head.Center.Minus(lightDirection.Times(1000)), uni.Head.Center, 0, 32)
-			groundtr = scaleAndShift(groundtr)
-			groundShadowImg = image.NewRGBA(image.Rect(0, 0, size, size))
-
-			DrawTracerParallel(groundtr, wv, groundShadowImg, nil, 8)
-		}
-
+		ymaxhoof := -99999.0
 		for _, l := range uni.Legs {
-			h := l.Hoof
-			hproj := ProjectBall(wv, h)
-			gimg := image.NewRGBA(image.Rect(0, 0, size, size))
-			shiftedY := hproj.Y()*Scale + Shift[1]
-			grassdata.MinBottomY = shiftedY + hproj.ProjectedRadius*Scale + (ymax-h.Center.Y())*hproj.ProjectedRadius/h.Radius*Scale
-			DrawGrass(gimg, grassdata, wv, groundShadowImg)
-			shinTracer := scaleAndShift(l.Shin.GetTracer(wv))
-			z := func(x, y float64) (bool, float64) {
-				ok, z, _, _ := shinTracer.Trace(x, y, wv.Ray(x, y))
-				return ok, z - 1
+			if l.Hoof.Center.Y() > ymaxhoof {
+				ymaxhoof = l.Hoof.Center.Y()
 			}
-			tr := NewImageTracer(gimg, shinTracer.GetBounds(), z)
-			grassTracers = append(grassTracers, tr)
 		}
-		grassdata.MinBottomY = 0
-		DrawGrass(img, grassdata, wv, groundShadowImg)
+		floory := ymaxhoof + uni.Legs[0].Hoof.Radius
+
+		fb1 := NewBall(-grassSize/2, floory, -grassSize/2, 1, Color{255, 0, 0})
+		fb2 := NewBall(grassSize/2, floory, -grassSize/2, 1, Color{0, 255, 0})
+		fb3 := NewBall(-grassSize/2, floory, grassSize/2, 1, Color{0, 0, 255})
+
+		hx := (0 - Shift[0]) / Scale
+		hy := (bgdata.Horizon*float64(size) - Shift[1]) / Scale
+		var hdist float64 = 100
+		for wv.UnProject(Vector{hx, hy, hdist}).Y() < floory {
+			hdist += 100
+		}
+
+		swf := func(x, y float64, bOk bool, bV, bW, bZ float64, tOk bool, tV, tW, tZ float64) (bool, float64, Vector, Color) {
+
+			if !bOk || !tOk || tZ > hdist {
+				return false, 0, NoDirection, Color{}
+			}
+
+			I := Vector{tV * grassSize, 0, tW * grassSize}
+			O := Vector{bV * grassSize, 15, bW * grassSize}
+			C := O.Minus(I)
+
+			sqrCX := Sqr(C.X())
+			sqrCY := Sqr(C.Y())
+			sqrCZ := Sqr(C.Z())
+
+			sqrIY := Sqr(I.Y())
+
+			CXCY := C.X() * C.Y()
+			CZCY := C.Z() * C.Y()
+
+			CXIY := C.X() * I.Y()
+			CZIY := C.Z() * I.Y()
+
+			twoIYCY := 2 * I.Y() * C.Y()
+
+			r0 := bladeDiameter
+			sqrr0 := Sqr(r0)
+
+			crossingCells := 5 * float64(RoundUp(math.Abs(C.X())/bladeDistance)+RoundUp(math.Abs(C.Z())/bladeDistance))
+			d := C.Times(1.0 / crossingCells)
+
+			prevX := -999999999
+			prevY := -999999999
+
+			for n := float64(0); n <= crossingCells; n++ {
+
+				p := I.Plus(d.Times(n))
+				cX := float64(RoundDown(p.X()/bladeDistance)) * bladeDistance
+				cY := float64(RoundDown(p.Z()/bladeDistance)) * bladeDistance
+				cx := int(cX)
+				cy := int(cY)
+				if cx == prevX && cy == prevY {
+					continue
+				}
+				prevX = cx
+				prevY = cy
+
+				randomish1 := float64(QuickRand2(cx, cy)) / 2147483648.0
+				randomish2 := float64(QuickRand2(cy, cx)) / 2147483648.0
+
+				B := Vector{cX + bladeDiameter + randomish1*(bladeDistance-2*bladeDiameter), 15, cY + randomish2*bladeDistance}
+				T := Vector{cX + randomish2*bladeDistance, 0, cY + randomish1*bladeDistance}
+				D := B.Minus(T)
+
+				sqrDX := Sqr(D.X())
+				sqrDY := Sqr(D.Y())
+				sqrDZ := Sqr(D.Z())
+
+				twoDYDX := 2 * D.Y() * D.X()
+				twoDYDZ := 2 * D.Y() * D.Z()
+
+				Q := I.Minus(T)
+
+				m1 := sqrDY*sqrCX - 2*D.Y()*D.X()*CXCY + sqrDX*sqrCY +
+					sqrDY*sqrCZ - 2*D.Y()*D.Z()*CZCY + sqrDZ*sqrCY -
+					sqrr0*sqrCY
+
+				m2 := 2*Q.X()*C.X()*sqrDY - twoDYDX*(Q.X()*C.Y()+CXIY) + sqrDX*twoIYCY +
+					2*Q.Z()*C.Z()*sqrDY - twoDYDZ*(Q.Z()*C.Y()+CZIY) + sqrDZ*twoIYCY -
+					sqrr0*twoIYCY
+
+				m3 := sqrDY*Sqr(Q.X()) - twoDYDX*Q.X()*I.Y() + sqrDX*sqrIY +
+					sqrDY*Sqr(Q.Z()) - twoDYDZ*Q.Z()*I.Y() + sqrDZ*sqrIY -
+					sqrr0*sqrIY
+
+				ep := m2 / m1 //FIXME: zero
+				eq := m3 / m1
+
+				disc := Sqr(ep)/4 - eq
+
+				if disc >= 0 {
+					t := -ep/2 - math.Sqrt(disc)
+					k := (I.Y() + t*C.Y()) / D.Y()
+
+					if k >= 0 && k <= 1 {
+						z := tZ + t*(bZ-tZ)
+
+						if z > hdist {
+							return false, 0, NoDirection, Color{}
+						}
+
+						dir := I.Plus(C.Times(t)).Minus(T.Plus(D.Times(k)))
+						dir[1] = -0.1
+
+						return true, z, dir, MixColors(grassdata.Color1, grassdata.Color2, k)
+
+					}
+				}
+
+			}
+			if bZ <= hdist {
+				landColor := MixColors(bgdata.Color("Land", bgdata.LandLight), bgdata.Color("Land", bgdata.LandLight/2), (x*Scale+Shift[0])/float64(size))
+				return true, bZ, Vector{0, -1, 0}, landColor
+			}
+			return false, 0, NoDirection, Color{}
+		}
+
+		sw := NewSandwich(fb1, fb2, fb3, Vector{0, -15, 0}, swf)
+		uniAndMaybeGrass.Add(sw)
 	}
 
-	tracer := uni.GetTracer(wv)
+	tracer := uniAndMaybeGrass.GetTracer(wv)
 
 	if shading {
 		p := Vector{0, 0, 1000}
@@ -186,7 +267,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 		ldp := wv.ProjectSphere(p.Plus(lightDirection), 0).CenterCS.Minus(pp)
 		lt := NewDirectionalLightTracer(tracer, ldp, 32, 80)
 
-		sc := NewShadowCastingTracer(lt, wv, uni, uni.Head.Center.Minus(lightDirection.Times(1000)), uni.Head.Center, 16, 16)
+		sc := NewShadowCastingTracer(lt, wv, uniAndMaybeGrass, uni.Head.Center.Minus(lightDirection.Times(1000)), uni.Head.Center, 16, 16)
 		tracer = sc
 	}
 

@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/balpha/go-unicornify/unicornify"
 	"bufio"
 	"crypto/md5"
 	"encoding/hex"
 	"flag"
 	"fmt"
+	"github.com/balpha/go-unicornify/unicornify"
 	"image"
 	"image/png"
 	"math/rand"

@@ -47,6 +47,10 @@ func (b *Ball) Shift(d Vector) {
 	b.Center = b.Center.Plus(d)
 }
 
+func (b *Ball) Shifted(d Vector) *Ball {
+	return NewBallP(b.Center.Plus(d), b.Radius, b.Color)
+}
+
 func (b *Ball) MoveToBone(bone Bone) {
 	b1 := bone.Balls[0]
 	b2 := bone.Balls[1]

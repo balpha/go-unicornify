@@ -38,3 +38,23 @@ func RoundDown(v float64) int {
 func Sqr(x float64) float64 {
 	return x * x
 }
+
+func Min(a int, b int) int {
+	if a <= b {
+		return a
+	}
+	return b
+}
+func Max(a int, b int) int {
+	if a >= b {
+		return a
+	}
+	return b
+}
+func QuickRand(seed int) int {
+	return (1103515245*seed + 12345) % 2147483648
+}
+func QuickRand2(seed1, seed2 int) int {
+	return QuickRand(QuickRand(seed1*seed2) * QuickRand(seed1-seed2))
+}
+
