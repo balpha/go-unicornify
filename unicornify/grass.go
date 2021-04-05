@@ -2,9 +2,8 @@ package unicornify
 
 import (
 	. "github.com/balpha/go-unicornify/unicornify/core"
+	. "github.com/balpha/go-unicornify/unicornify/elements"
 	"github.com/balpha/gopyrand"
-	"image"
-	"image/color"
 	"math"
 )
 
@@ -25,77 +24,126 @@ func (d *GrassData) Randomize(rand *pyrand.Random) {
 	d.Wind = 1.6*rand.Random() - 0.8
 }
 
-type BladeData struct {
-	BottomX, BottomY, Height, BottomWidth, TopWidth, CurveStrength float64 // pixel-based
-	CurveStart, CurveEnd                                           float64
-	Color                                                          Color
-	ConstrainImage                                                 *image.RGBA
-}
+func GrassSandwich(groundY float64, bgdata BackgroundData, grassdata GrassData, shift Point2d, scale float64, imageSize int, wv WorldView) Thing {
+	var grassSize float64 = 20000
+	var bladeDistance float64 = 3
+	var bladeDiameter float64 = 2
+	fb1 := NewBall(-grassSize/2, groundY, -grassSize/2, 1, Color{255, 0, 0})
+	fb2 := NewBall(grassSize/2, groundY, -grassSize/2, 1, Color{0, 255, 0})
+	fb3 := NewBall(-grassSize/2, groundY, grassSize/2, 1, Color{0, 0, 255})
 
-func DrawGrass(img *image.RGBA, d GrassData, wv WorldView, shadowImage *image.RGBA) {
-	bd := BladeData{}
-	fsize := float64(img.Bounds().Dy())
-	for row := uint32(0); bd.BottomY-bd.Height <= fsize; row++ {
-		seed := d.Seed + row*d.RowSeedAdd
-		rand := pyrand.NewRandom()
-		rand.SeedFromUInt32(seed)
+	hx := (0 - shift[0]) / scale
+	hy := (bgdata.Horizon*float64(imageSize) - shift[1]) / scale
+	var hdist float64 = 100
+	for wv.UnProject(Vector{hx, hy, hdist}).Y() < groundY {
+		hdist += 100
+	}
 
-		rowf := float64(row) / 100.0
+	swf := func(x, y float64, bOk bool, bV, bW, bZ float64, tOk bool, tV, tW, tZ float64) (bool, float64, Vector, Color) {
 
-		distf := d.BladeHeightFar / d.BladeHeightNear
-
-		y := (1-distf)*rowf*rowf + distf*rowf
-		baseSize := d.BladeHeightFar + rowf*(d.BladeHeightNear-d.BladeHeightFar)
-		colstep := 0.2 * baseSize
-
-		bottomY := fsize * (d.Horizon + y*(1-d.Horizon))
-		if bottomY < d.MinBottomY {
-			continue
+		if !bOk || !tOk || tZ > hdist {
+			return false, 0, NoDirection, Color{}
 		}
 
-		for col := 0.0; col <= 1; col += colstep {
-			bd.BottomX = fsize * (col + baseSize*(rand.Random()*0.2-0.1))
-			bd.BottomY = bottomY + fsize*baseSize*rand.Random()*0.3
-			bd.Height = baseSize * fsize * (0.95 + rand.Random()*0.1)
-			bd.BottomWidth = baseSize * fsize * (rand.Random()*0.04 + 0.1)
-			bd.TopWidth = baseSize * fsize * (rand.Random() * 0.01)
-			bd.CurveStrength = baseSize * fsize * (d.Wind + rand.Random()*0.2)
-			bd.CurveStart = rand.Random() * 0.5
-			bd.CurveEnd = 0.5 + rand.Random()*0.5
-			bd.Color = MixColors(d.Color1, d.Color2, rand.Random())
+		I := Vector{tV * grassSize, 0, tW * grassSize}
+		O := Vector{bV * grassSize, 15, bW * grassSize}
+		C := O.Minus(I)
 
-			if shadowImage != nil {
-				s := shadowImage.RGBAAt(Round(bd.BottomX), Round(bd.BottomY))
-				if s.A == 255 && s.R < 128 {
-					bd.Color = Darken(bd.Color, uint8(128-s.R))
+		sqrCX := Sqr(C.X())
+		sqrCY := Sqr(C.Y())
+		sqrCZ := Sqr(C.Z())
+
+		sqrIY := Sqr(I.Y())
+
+		CXCY := C.X() * C.Y()
+		CZCY := C.Z() * C.Y()
+
+		CXIY := C.X() * I.Y()
+		CZIY := C.Z() * I.Y()
+
+		twoIYCY := 2 * I.Y() * C.Y()
+
+		r0 := bladeDiameter
+		sqrr0 := Sqr(r0)
+
+		crossingCells := 5 * float64(RoundUp(math.Abs(C.X())/bladeDistance)+RoundUp(math.Abs(C.Z())/bladeDistance))
+		d := C.Times(1.0 / crossingCells)
+
+		prevX := -999999999
+		prevY := -999999999
+
+		for n := float64(0); n <= crossingCells; n++ {
+
+			p := I.Plus(d.Times(n))
+			cX := float64(RoundDown(p.X()/bladeDistance)) * bladeDistance
+			cY := float64(RoundDown(p.Z()/bladeDistance)) * bladeDistance
+			cx := int(cX)
+			cy := int(cY)
+			if cx == prevX && cy == prevY {
+				continue
+			}
+			prevX = cx
+			prevY = cy
+
+			randomish1 := float64(QuickRand2(cx, cy)) / 2147483648.0
+			randomish2 := float64(QuickRand2(cy, cx)) / 2147483648.0
+
+			B := Vector{cX + bladeDiameter + randomish1*(bladeDistance-2*bladeDiameter), 15, cY + randomish2*bladeDistance}
+			T := Vector{cX + randomish2*bladeDistance, 0, cY + randomish1*bladeDistance}
+			D := B.Minus(T)
+
+			sqrDX := Sqr(D.X())
+			sqrDY := Sqr(D.Y())
+			sqrDZ := Sqr(D.Z())
+
+			twoDYDX := 2 * D.Y() * D.X()
+			twoDYDZ := 2 * D.Y() * D.Z()
+
+			Q := I.Minus(T)
+
+			m1 := sqrDY*sqrCX - 2*D.Y()*D.X()*CXCY + sqrDX*sqrCY +
+				sqrDY*sqrCZ - 2*D.Y()*D.Z()*CZCY + sqrDZ*sqrCY -
+				sqrr0*sqrCY
+
+			m2 := 2*Q.X()*C.X()*sqrDY - twoDYDX*(Q.X()*C.Y()+CXIY) + sqrDX*twoIYCY +
+				2*Q.Z()*C.Z()*sqrDY - twoDYDZ*(Q.Z()*C.Y()+CZIY) + sqrDZ*twoIYCY -
+				sqrr0*twoIYCY
+
+			m3 := sqrDY*Sqr(Q.X()) - twoDYDX*Q.X()*I.Y() + sqrDX*sqrIY +
+				sqrDY*Sqr(Q.Z()) - twoDYDZ*Q.Z()*I.Y() + sqrDZ*sqrIY -
+				sqrr0*sqrIY
+
+			ep := m2 / m1 //FIXME: zero
+			eq := m3 / m1
+
+			disc := Sqr(ep)/4 - eq
+
+			if disc >= 0 {
+				t := -ep/2 - math.Sqrt(disc)
+				k := (I.Y() + t*C.Y()) / D.Y()
+
+				if k >= 0 && k <= 1 {
+					z := tZ + t*(bZ-tZ)
+
+					if z > hdist {
+						return false, 0, NoDirection, Color{}
+					}
+
+					dir := I.Plus(C.Times(t)).Minus(T.Plus(D.Times(k)))
+					dir[1] = -0.1
+
+					return true, z, dir, MixColors(grassdata.Color1, grassdata.Color2, k)
+
 				}
 			}
 
-			DrawGrassBlade(img, bd)
 		}
+		if bZ <= hdist {
+			landColor := MixColors(bgdata.Color("Land", bgdata.LandLight), bgdata.Color("Land", bgdata.LandLight/2), (x*scale+shift[0])/float64(imageSize))
+			return true, bZ, Vector{0, -1, 0}, landColor
+		}
+		return false, 0, NoDirection, Color{}
 	}
 
-}
-
-func DrawGrassBlade(img *image.RGBA, d BladeData) {
-
-	for dy := 0; dy <= Round(d.Height); dy++ {
-		f := float64(dy) / d.Height
-		curveP := (d.CurveStart + f*(d.CurveEnd-d.CurveStart)) * math.Pi / 2
-		curve := math.Sin(curveP) - curveP - (math.Sin(d.CurveStart*math.Pi/2) - d.CurveStart*math.Pi/2)
-		width := d.BottomWidth + f*(d.TopWidth-d.BottomWidth)
-		left := Round(d.BottomX + curve*d.CurveStrength - width/2)
-		right := Round(d.BottomX + curve*d.CurveStrength + width/2)
-		y := Round(d.BottomY) - dy
-		for x := left; x <= right; x++ {
-			if d.ConstrainImage != nil && d.ConstrainImage.At(x, y).(color.RGBA).A == 0 {
-				continue
-			}
-			thiscol := d.Color
-			if (d.CurveStrength < 0 && x >= left+(right-left)*2/3) || (d.CurveStrength >= 0 && x <= left+(right-left)*1/3) {
-				thiscol = Darken(thiscol, 10)
-			}
-			img.SetRGBA(x, y, thiscol.ToRGBA())
-		}
-	}
+	return NewSandwich(fb1, fb2, fb3, Vector{0, -15, 0}, swf)
 }

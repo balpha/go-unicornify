@@ -57,4 +57,3 @@ func QuickRand(seed int) int {
 func QuickRand2(seed1, seed2 int) int {
 	return QuickRand(QuickRand(seed1*seed2) * QuickRand(seed1-seed2))
 }
-
