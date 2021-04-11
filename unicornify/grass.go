@@ -20,7 +20,7 @@ func (d *GrassData) Randomize(rand *pyrand.Random) {
 
 func GrassSandwich(groundY float64, bgdata BackgroundData, grassdata GrassData, shift Point2d, scale float64, imageSize int) Thing {
 	var grassSize float64 = 20000
-	var bladeDistance float64 = 3
+	var bladeDistance float64 = 4
 	var bladeDiameter float64 = 2
 	fb1 := NewBall(-grassSize/2, groundY, -grassSize/2, 1, Color{255, 0, 0})
 	fb2 := NewBall(grassSize/2, groundY, -grassSize/2, 1, Color{0, 255, 0})
@@ -63,72 +63,105 @@ func GrassSandwich(groundY float64, bgdata BackgroundData, grassdata GrassData, 
 		for n := float64(0); n <= crossingCells; n++ {
 
 			p := I.Plus(d.Times(n))
-			cX := float64(RoundDown(p.X()/bladeDistance)) * bladeDistance
-			cY := float64(RoundDown(p.Z()/bladeDistance)) * bladeDistance
-			cx := int(cX)
-			cy := int(cY)
-			if cx == prevX && cy == prevY {
+			cXb := float64(RoundDown(p.X()/bladeDistance)) * bladeDistance
+			cYb := float64(RoundDown(p.Z()/bladeDistance)) * bladeDistance
+			cxb := int(cXb)
+			cyb := int(cYb)
+			if cxb == prevX && cyb == prevY {
 				continue
 			}
-			prevX = cx
-			prevY = cy
+			prevX = cxb
+			prevY = cyb
 
-			randomish1 := float64(QuickRand2(cx, cy)) / 2147483648.0
-			randomish2 := float64(QuickRand2(cy, cx)) / 2147483648.0
+			closest := EmptyInterval
 
-			B := Vector{cX + bladeDiameter + randomish1*(bladeDistance-2*bladeDiameter), 15, cY + randomish2*bladeDistance}
-			T := Vector{cX + randomish2*bladeDistance, 0, cY + randomish1*bladeDistance}
-			D := B.Minus(T)
+			for ix := 0; ix <= 0; ix++ {
+				for iy := 0; iy <= 0; iy++ {
 
-			sqrDX := Sqr(D.X())
-			sqrDY := Sqr(D.Y())
-			sqrDZ := Sqr(D.Z())
+					cx := cxb - ix
+					cy := cyb - iy
+					cX := float64(cx)
+					cY := float64(cy)
 
-			twoDYDX := 2 * D.Y() * D.X()
-			twoDYDZ := 2 * D.Y() * D.Z()
+					randomish1 := float64(QuickRand2(cx, cy)) / 2147483648.0
+					randomish2 := float64(QuickRand2(cy, cx)) / 2147483648.0
+					randomish3 := float64(QuickRand2(cx+cy, cy)) / 2147483648.0
+					randomish4 := float64(QuickRand2(cy, cx+cy)) / 2147483648.0
 
-			Q := I.Minus(T)
+					B := Vector{cX + bladeDiameter + randomish4*(2*bladeDistance-2*bladeDiameter), 15, cY + bladeDiameter + randomish2*(2*bladeDistance-2*bladeDiameter)}
+					T := Vector{cX + 2*randomish3*bladeDistance, 0, cY + 2*randomish1*bladeDistance}
+					D := B.Minus(T)
 
-			m1 := sqrDY*sqrCX - 2*D.Y()*D.X()*CXCY + sqrDX*sqrCY +
-				sqrDY*sqrCZ - 2*D.Y()*D.Z()*CZCY + sqrDZ*sqrCY -
-				sqrr0*sqrCY
+					sqrDX := Sqr(D.X())
+					sqrDY := Sqr(D.Y())
+					sqrDZ := Sqr(D.Z())
 
-			m2 := 2*Q.X()*C.X()*sqrDY - twoDYDX*(Q.X()*C.Y()+CXIY) + sqrDX*twoIYCY +
-				2*Q.Z()*C.Z()*sqrDY - twoDYDZ*(Q.Z()*C.Y()+CZIY) + sqrDZ*twoIYCY -
-				sqrr0*twoIYCY
+					twoDYDX := 2 * D.Y() * D.X()
+					twoDYDZ := 2 * D.Y() * D.Z()
 
-			m3 := sqrDY*Sqr(Q.X()) - twoDYDX*Q.X()*I.Y() + sqrDX*sqrIY +
-				sqrDY*Sqr(Q.Z()) - twoDYDZ*Q.Z()*I.Y() + sqrDZ*sqrIY -
-				sqrr0*sqrIY
+					Q := I.Minus(T)
 
-			ep := m2 / m1 //FIXME: zero
-			eq := m3 / m1
+					m1 := sqrDY*sqrCX - 2*D.Y()*D.X()*CXCY + sqrDX*sqrCY +
+						sqrDY*sqrCZ - 2*D.Y()*D.Z()*CZCY + sqrDZ*sqrCY -
+						sqrr0*sqrCY
 
-			disc := Sqr(ep)/4 - eq
+					m2 := 2*Q.X()*C.X()*sqrDY - twoDYDX*(Q.X()*C.Y()+CXIY) + sqrDX*twoIYCY +
+						2*Q.Z()*C.Z()*sqrDY - twoDYDZ*(Q.Z()*C.Y()+CZIY) + sqrDZ*twoIYCY -
+						sqrr0*twoIYCY
 
-			if disc >= 0 {
-				t := -ep/2 - math.Sqrt(disc)
-				k := (I.Y() + t*C.Y()) / D.Y()
+					m3 := sqrDY*Sqr(Q.X()) - twoDYDX*Q.X()*I.Y() + sqrDX*sqrIY +
+						sqrDY*Sqr(Q.Z()) - twoDYDZ*Q.Z()*I.Y() + sqrDZ*sqrIY -
+						sqrr0*sqrIY
 
-				if k >= 0 && k <= 1 {
-					z := tZ + t*(bZ-tZ)
+					ep := m2 / m1 //FIXME: zero
+					eq := m3 / m1
 
-					dir := I.Plus(C.Times(t)).Minus(T.Plus(D.Times(k)))
-					dir[1] = -0.1
+					disc := Sqr(ep)/4 - eq
 
-					return true, TraceIntervals{
-						TraceInterval{
-							TraceResult{z, dir, MixColors(grassdata.Color1, grassdata.Color2, k)},
-							TraceResult{z + k*r0, dir.Neg() /*fixme*/, MixColors(grassdata.Color1, grassdata.Color2, k)},
-						},
-						TraceInterval{
-							TraceResult{bZ - 0.1 /*fixme*/, Vector{0, -1, 0}, landColor},
-							TraceResult{bZ /*fixme*/, Vector{0, 1, 0}, landColor},
-						},
+					if disc >= 0 {
+						t := -ep/2 - math.Sqrt(disc)
+						k := (I.Y() + t*C.Y()) / D.Y()
+
+						if k >= 0 && k <= 1 {
+							z := tZ + t*(bZ-tZ)
+
+							dir := I.Plus(C.Times(t)).Minus(T.Plus(D.Times(k)))
+							dir[1] = -0.1
+
+							if closest.IsEmpty() || closest.Start.Z > z {
+								closest = TraceInterval{
+									TraceResult{z, dir, MixColors(grassdata.Color1, grassdata.Color2, k)},
+									TraceResult{z + k*r0, dir.Neg() /*fixme*/, MixColors(grassdata.Color1, grassdata.Color2, k)},
+								}
+							}
+							if false {
+								return true, TraceIntervals{
+									TraceInterval{
+										TraceResult{z, dir, MixColors(grassdata.Color1, grassdata.Color2, k)},
+										TraceResult{z + k*r0, dir.Neg() /*fixme*/, MixColors(grassdata.Color1, grassdata.Color2, k)},
+									},
+									TraceInterval{
+										TraceResult{bZ - 0.1 /*fixme*/, Vector{0, -1, 0}, landColor},
+										TraceResult{bZ /*fixme*/, Vector{0, 1, 0}, landColor},
+									},
+								}
+							}
+						}
 					}
 				}
 			}
+			if !closest.IsEmpty() {
+				return true, TraceIntervals{
+					closest,
+					TraceInterval{
+						TraceResult{bZ - 0.1 /*fixme*/, Vector{0, -1, 0}, landColor},
+						TraceResult{bZ /*fixme*/, Vector{0, 1, 0}, landColor},
+					},
+				}
+			}
+
 		}
+
 		return true, TraceIntervals{
 			TraceInterval{
 				TraceResult{bZ - 0.1 /*fixme*/, Vector{0, -1, 0}, landColor},
