@@ -129,8 +129,18 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 		}
 		floory := ymaxhoof + uni.Legs[0].Hoof.Radius
 
-		grassSandwich := GrassSandwich(floory, bgdata, grassdata, Shift, Scale, size, wv)
-		uniAndMaybeGrass.Add(grassSandwich)
+		hx := (0 - Shift[0]) / Scale
+		hy := (bgdata.Horizon*float64(size) - Shift[1]) / Scale
+		var hdist float64 = 100
+		for wv.UnProject(Vector{hx, hy, hdist}).Y() < floory {
+			hdist += 10
+		}
+		grassSandwich := GrassSandwich(floory, bgdata, grassdata, Shift, Scale, size)
+
+		// center can't be exactly the camera position -- haven't yet dug into where exactly this is creating edge case behavior
+		crop := NewBallP(wv.CameraPosition.Plus(Vector{0, 0, 1}), hdist, Color{255, 0, 0})
+
+		uniAndMaybeGrass.Add(NewIntersection(grassSandwich, crop))
 	}
 
 	tracer := uniAndMaybeGrass.GetTracer(wv)

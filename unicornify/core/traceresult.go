@@ -22,6 +22,11 @@ var EmptyIntervals = TraceIntervals{}
 
 func (first TraceInterval) Intersect(second TraceInterval) TraceInterval {
 	var left, right TraceResult
+
+	if first.IsEmpty() || second.IsEmpty() {
+		return EmptyInterval
+	}
+
 	if second.Start.Z > first.Start.Z {
 		left = second.Start
 	} else {
@@ -37,7 +42,9 @@ func (first TraceInterval) Intersect(second TraceInterval) TraceInterval {
 		return EmptyInterval
 	}
 
-	return TraceInterval{left, right}
+	color := first.Start.Color //fixme?
+
+	return TraceInterval{TraceResult{left.Z, left.Direction, color}, TraceResult{right.Z, right.Direction, color}}
 }
 
 func (i TraceInterval) IsEmpty() bool {

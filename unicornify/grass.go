@@ -18,7 +18,7 @@ func (d *GrassData) Randomize(rand *pyrand.Random) {
 	d.Wind = 1.6*rand.Random() - 0.8 // not yet used
 }
 
-func GrassSandwich(groundY float64, bgdata BackgroundData, grassdata GrassData, shift Point2d, scale float64, imageSize int, wv WorldView) Thing {
+func GrassSandwich(groundY float64, bgdata BackgroundData, grassdata GrassData, shift Point2d, scale float64, imageSize int) Thing {
 	var grassSize float64 = 20000
 	var bladeDistance float64 = 3
 	var bladeDiameter float64 = 2
@@ -26,17 +26,10 @@ func GrassSandwich(groundY float64, bgdata BackgroundData, grassdata GrassData, 
 	fb2 := NewBall(grassSize/2, groundY, -grassSize/2, 1, Color{0, 255, 0})
 	fb3 := NewBall(-grassSize/2, groundY, grassSize/2, 1, Color{0, 0, 255})
 
-	hx := (0 - shift[0]) / scale
-	hy := (bgdata.Horizon*float64(imageSize) - shift[1]) / scale
-	var hdist float64 = 100
-	for wv.UnProject(Vector{hx, hy, hdist}).Y() < groundY {
-		hdist += 100
-	}
+	swf := func(x, y float64, bOk bool, bV, bW, bZ float64, tOk bool, tV, tW, tZ float64) (bool, TraceIntervals) {
 
-	swf := func(x, y float64, bOk bool, bV, bW, bZ float64, tOk bool, tV, tW, tZ float64) (bool, float64, Vector, Color) {
-
-		if !bOk || !tOk || tZ > hdist {
-			return false, 0, NoDirection, Color{}
+		if !bOk || !tOk {
+			return false, TraceIntervals{}
 		}
 
 		I := Vector{tV * grassSize, 0, tW * grassSize}
@@ -65,6 +58,7 @@ func GrassSandwich(groundY float64, bgdata BackgroundData, grassdata GrassData, 
 
 		prevX := -999999999
 		prevY := -999999999
+		landColor := MixColors(bgdata.Color("Land", bgdata.LandLight), bgdata.Color("Land", bgdata.LandLight/2), (x*scale+shift[0])/float64(imageSize))
 
 		for n := float64(0); n <= crossingCells; n++ {
 
@@ -119,24 +113,28 @@ func GrassSandwich(groundY float64, bgdata BackgroundData, grassdata GrassData, 
 				if k >= 0 && k <= 1 {
 					z := tZ + t*(bZ-tZ)
 
-					if z > hdist {
-						return false, 0, NoDirection, Color{}
-					}
-
 					dir := I.Plus(C.Times(t)).Minus(T.Plus(D.Times(k)))
 					dir[1] = -0.1
 
-					return true, z, dir, MixColors(grassdata.Color1, grassdata.Color2, k)
-
+					return true, TraceIntervals{
+						TraceInterval{
+							TraceResult{z, dir, MixColors(grassdata.Color1, grassdata.Color2, k)},
+							TraceResult{z + k*r0, dir.Neg() /*fixme*/, MixColors(grassdata.Color1, grassdata.Color2, k)},
+						},
+						TraceInterval{
+							TraceResult{bZ - 0.1 /*fixme*/, Vector{0, -1, 0}, landColor},
+							TraceResult{bZ /*fixme*/, Vector{0, 1, 0}, landColor},
+						},
+					}
 				}
 			}
-
 		}
-		if bZ <= hdist {
-			landColor := MixColors(bgdata.Color("Land", bgdata.LandLight), bgdata.Color("Land", bgdata.LandLight/2), (x*scale+shift[0])/float64(imageSize))
-			return true, bZ, Vector{0, -1, 0}, landColor
+		return true, TraceIntervals{
+			TraceInterval{
+				TraceResult{bZ - 0.1 /*fixme*/, Vector{0, -1, 0}, landColor},
+				TraceResult{bZ /*fixme*/, Vector{0, 1, 0}, landColor},
+			},
 		}
-		return false, 0, NoDirection, Color{}
 	}
 
 	return NewSandwich(fb1, fb2, fb3, Vector{0, -15, 0}, swf)

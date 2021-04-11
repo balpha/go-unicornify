@@ -4,7 +4,7 @@ import (
 	. "github.com/balpha/go-unicornify/unicornify/core"
 )
 
-type SandwichFunction = func(float64, float64, bool, float64, float64, float64, bool, float64, float64, float64) (bool, float64, Vector, Color)
+type SandwichFunction = func(float64, float64, bool, float64, float64, float64, bool, float64, float64, float64) (bool, TraceIntervals)
 
 type Sandwich struct {
 	Balls     [3]*Ball
@@ -34,20 +34,20 @@ func (s *Sandwich) GetTracer(wv WorldView) Tracer {
 	}
 }
 
-func (t *SandwichTracer) TraceDeep(x, y float64, ray Vector) (bool, TraceIntervals) {
-	return DeepifyTrace(t, x, y, ray)
+func (t *SandwichTracer) Trace(x, y float64, ray Vector) (bool, float64, Vector, Color) {
+	return UnDeepifyTrace(t, x, y, ray)
 }
 
 func (t *SandwichTracer) Pruned(rp RenderingParameters) Tracer {
 	return SimplyPruned(t, rp) //FIXME
 }
 
-func (t *SandwichTracer) Trace(x, y float64, ray Vector) (bool, float64, Vector, Color) {
+func (t *SandwichTracer) TraceDeep(x, y float64, ray Vector) (bool, TraceIntervals) {
 	bOk, bV, bW, bZ := t.bottomTracer.TraceToIntersection(x, y, ray)
 	tOk, tV, tW, tZ := t.topTracer.TraceToIntersection(x, y, ray)
 
 	if !bOk && !tOk {
-		return false, 0, NoDirection, Color{}
+		return false, TraceIntervals{}
 	}
 	return t.F(x, y, bOk, bV, bW, bZ, tOk, tV, tW, tZ)
 }

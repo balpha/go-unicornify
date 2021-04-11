@@ -61,7 +61,7 @@ func (t *GroupTracer) TraceDeep(x, y float64, ray Vector) (bool, TraceIntervals)
 			continue
 		}
 		ok, is := t.TraceDeep(x, y, ray)
-		if ok && is[0].Start.Z > 0 {
+		if ok && is[0].End.Z > 0 {
 			any = true
 			result = result.Union(is)
 		}
