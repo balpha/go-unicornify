@@ -324,3 +324,26 @@ func CrossAxes(v Vector) (u1, u2 Vector) {
 
 	return ux, uy
 }
+
+// Returns a vector u of length l1 such that v-u has length l2 and dir is the rough direction
+// of the "joint" (i.e. the interpretation of u as a point) from the line created by v. "Rough"
+// means that if p is the projection of u onto v, and o is the part of dir that is orthogonal to
+// v, then u-p is a multiple of o.
+//
+// If these constraints aren't satisfiable (either because |v| > l1+l2 or because dir isn't linearly
+// independent of v), then u will be a multiple of v, be longer than l1, and v-u will be longer than l2
+// (by the same factor).
+func Joint(v Vector, l1, l2 float64, roughDir Vector) Vector {
+	l := v.Length()
+	dir := roughDir.Minus(roughDir.ProjectionOntoAxis(Vector{0, 0, 0}, v))
+	if l > l1+l2 || dir.Length() < 0.00000001 {
+		return v.Times(l1 / (l1 + l2))
+	}
+
+	d := Sqr(l2) - Sqr(l1)
+	lc := 0.5 * (l - d/l)
+
+	h := math.Sqrt(Sqr(l1) - Sqr(lc))
+	LC := v.Times(lc / l)
+	return LC.Plus(dir.Unit().Times(h))
+}

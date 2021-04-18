@@ -40,6 +40,9 @@ func NewUnicorn(data UnicornData) *Unicorn {
 	u.makeEyes(data)
 	u.makeLegs(data)
 	data.PoseKind(u, data.PosePhase)
+	for _, leg := range u.Legs {
+		leg.MoveHoofTo(leg.Hoof.Center)
+	}
 
 	u.makeMane(data)
 
@@ -153,7 +156,7 @@ func (u *Unicorn) makeLegs(data UnicornData) {
 		knee := NewBall(35, 254, z, 9, data.Color("Body", 70))
 		hoof := NewBall(55, 310, z, 11, data.Color("Body", 45))
 		hip.MoveToSphere(*u.Shoulder)
-		u.Legs[i] = NewLeg(hip, knee, hoof)
+		u.Legs[i] = NewLeg(hip, knee, hoof, true, z < 0)
 	}
 	// back
 	for i, z := range [2]float64{-25, 25} {
@@ -161,24 +164,82 @@ func (u *Unicorn) makeLegs(data UnicornData) {
 		knee := NewBall(230, 265, z, 9, data.Color("Body", 70))
 		hoof := NewBall(220, 310, z, 11, data.Color("Body", 45))
 		hip.MoveToSphere(*u.Butt)
-		u.Legs[i+2] = NewLeg(hip, knee, hoof)
+		u.Legs[i+2] = NewLeg(hip, knee, hoof, false, z < 0)
 	}
 }
 
 type Leg struct {
-	Hip  *Ball
-	Knee *Ball
-	Hoof *Ball
-	Calf *Bone
-	Shin *Bone
+	Hip        *Ball
+	Knee       *Ball
+	Hoof       *Ball
+	Calf       *Bone
+	Shin       *Bone
+	CalfLength float64
+	ShinLength float64
+	IsFront    bool
+	IsLeft     bool
 }
 
-func NewLeg(hip, knee, hoof *Ball) Leg {
+func (l *Leg) MoveHoofTo(hoofPos Vector) {
+	var dir Vector
+	delta := hoofPos.Minus(l.Hip.Center)
+	var sideFactor float64
+	if l.IsLeft {
+		sideFactor = -1
+	} else {
+		sideFactor = 1
+	}
+
+	if l.IsFront {
+		if delta.X() >= 0 {
+			//hoof towards back
+			dir = Vector{-1, 1, 0}
+		} else {
+			// hoof towards front
+			slope := math.Abs(delta.Y()) / math.Abs(delta.X())
+			if slope < 0.3 {
+				// more up than outward
+				dir = Vector{0, 0, sideFactor}
+			} else if slope > 0.6 {
+				dir = Vector{-1, -1, 0}
+			} else {
+				f := (slope - 0.3) / (0.6 - 0.3)
+				dir = Vector{-1 * f, -1 * f, sideFactor * (1 - f)}
+			}
+		}
+	} else { // back
+		if delta.X() <= 0 {
+			//hoof towards front
+			dir = Vector{1, 1, 0}
+		} else {
+			// hoof towards front
+			slope := math.Abs(delta.Y()) / math.Abs(delta.X())
+			if slope < 0.3 {
+				// more up than outward
+				dir = Vector{0, 0, sideFactor}
+			} else if slope > 0.6 {
+				dir = Vector{1, -1, 0}
+			} else {
+				f := (slope - 0.3) / (0.6 - 0.3)
+				dir = Vector{1 * f, -1 * f, sideFactor * (1 - f)}
+			}
+		}
+	}
+	kneePos := l.Hip.Center.Plus(Joint(hoofPos.Minus(l.Hip.Center), l.CalfLength, l.ShinLength, dir))
+	l.Hoof.Center = hoofPos
+	l.Knee.Center = kneePos
+}
+
+func NewLeg(hip, knee, hoof *Ball, isFront, isLeft bool) Leg {
 	return Leg{
-		Hip:  hip,
-		Knee: knee,
-		Hoof: hoof,
-		Calf: NewBone(hip, knee),
-		Shin: NewBone(knee, hoof),
+		Hip:        hip,
+		Knee:       knee,
+		Hoof:       hoof,
+		Calf:       NewBone(hip, knee),
+		CalfLength: knee.Center.Minus(hip.Center).Length(),
+		Shin:       NewBone(knee, hoof),
+		ShinLength: hoof.Center.Minus(knee.Center).Length(),
+		IsFront:    isFront,
+		IsLeft:     isLeft,
 	}
 }
