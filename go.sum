@@ -1,0 +1,4 @@
+github.com/balpha/gopyrand v0.0.0-20201016160048-dc355f849be3 h1:lAzCkMQcKp8jnKCVCzlOtpigaxNnNGSYH3wyhDu6bFg=
+github.com/balpha/gopyrand v0.0.0-20201016160048-dc355f849be3/go.mod h1:k1hFqTtiunf1DFIJ3B/2lnLEE0RP08p3DE1g3kxxvlw=
+github.com/balpha/gopyrand v1.0.0 h1:Rjf4DWhQhKLj2onXXkwDa1Bk3vq0+pRBoHvJ34vgTfk=
+github.com/balpha/gopyrand v1.0.0/go.mod h1:JqeTDQ1nnLLyKNfeunaSi7tKFlVYj8E19yOtyODKuBM=
