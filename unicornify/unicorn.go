@@ -1,9 +1,10 @@
 package unicornify
 
 import (
+	"math"
+
 	. "github.com/balpha/go-unicornify/unicornify/core"
 	. "github.com/balpha/go-unicornify/unicornify/elements"
-	"math"
 )
 
 type Unicorn struct {
@@ -16,6 +17,7 @@ type Unicorn struct {
 	Tail                                            *Bone
 	Legs                                            [4]Leg
 	Hairs                                           *Figure
+	EarLeft, EarRight                               *Figure
 }
 
 var red = Color{255, 0, 0}
@@ -38,6 +40,7 @@ func NewUnicorn(data UnicornData) *Unicorn {
 	u.HornTip.RotateAround(*u.HornOnset, data.HornAngle, 2)
 
 	u.makeEyes(data)
+	u.makeEars(data)
 	u.makeLegs(data)
 	data.PoseKind(u, data.PosePhase)
 	for _, leg := range u.Legs {
@@ -64,6 +67,7 @@ func NewUnicorn(data UnicornData) *Unicorn {
 		NewNonLinBone(u.BrowLeftMiddle, u.BrowLeftOuter, nil, eyecurve),
 		NewNonLinBone(u.BrowRightInner, u.BrowRightMiddle, nil, eyecurve),
 		NewNonLinBone(u.BrowRightMiddle, u.BrowRightOuter, nil, eyecurve),
+		u.EarLeft, u.EarRight,
 	)
 
 	for b := range u.BallSet() {
@@ -114,6 +118,46 @@ func (u *Unicorn) makeEyes(data UnicornData) {
 	u.BrowRightMiddle.SetGap(5+data.BrowLength, *u.EyeRight)
 	u.BrowRightOuter = NewBallP(u.EyeRight.Center.Plus(Vector{0, -10, data.BrowLength}), data.BrowSize, data.Color("Hair", 60))
 	u.BrowRightOuter.SetGap(5-moodDelta, *u.EyeRight)
+}
+
+func (u *Unicorn) makeEar(data UnicornData, side float64) *Figure {
+	color := data.Color("Body", 60)
+	baseRadius := data.HeadSize * 0.35
+	base := NewBall(0, -10, 10*side, baseRadius, data.Color("Body", 50))
+	base.SetGap(-baseRadius, *u.Head)
+	tip := NewBallP(base.Center.Plus(Vector{0, -data.EarLength, 0}), 4, data.Color("Body", 70))
+
+	baseInner := NewBallP(base.Center, base.Radius-2, base.Color)
+	tipInner := NewBallP(tip.Center, tip.Radius-2, tip.Color)
+
+	box := NewSteak(
+		NewBallP(base.Center.Plus((Vector{baseRadius, baseRadius, -baseRadius})), baseRadius, color),
+		NewBallP(base.Center.Plus((Vector{baseRadius, baseRadius, baseRadius})), baseRadius, color),
+		NewBallP(base.Center.Plus((Vector{baseRadius, -data.EarLength - baseRadius, -baseRadius})), baseRadius, color),
+	)
+	box.FourCorners = true
+	box.Rounded = false
+	result := &Figure{}
+	result.Add(NewIntersection(
+		NewDifference(
+			NewBone(base, tip),
+			NewBone(baseInner, tipInner),
+		),
+		box,
+	))
+	for b := range result.BallSet() {
+		frontBack := -45.0 - 45*Sqr(data.BrowMood)
+		upDown := -30 - 20*data.BrowMood
+		b.RotateAround(*base, frontBack*side*DEGREE, 1)
+		b.RotateAround(*base, upDown*side*DEGREE, 0)
+	}
+	return result
+}
+
+func (u *Unicorn) makeEars(data UnicornData) {
+	u.EarLeft = u.makeEar(data, -1)
+
+	u.EarRight = u.makeEar(data, 1)
 }
 
 func (u *Unicorn) makeMane(data UnicornData) {

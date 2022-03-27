@@ -1,12 +1,13 @@
 package unicornify
 
 import (
+	"image"
+	"math"
+
 	. "github.com/balpha/go-unicornify/unicornify/core"
 	. "github.com/balpha/go-unicornify/unicornify/elements"
 	. "github.com/balpha/go-unicornify/unicornify/rendering"
-	"github.com/balpha/gopyrand"
-	"image"
-	"math"
+	pyrand "github.com/balpha/gopyrand"
 )
 
 func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shading bool, grass bool, parallelize bool, yCallback func(int)) (error, *image.RGBA) {
@@ -50,6 +51,8 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 	lightDirection := Vector{rand.Random()*16 - 8, 10, rand.Random() * 3}
 
 	lightDirection = Vector{lightDirection.Z(), lightDirection.Y(), -lightDirection.X()}
+
+	data.Randomize5(rand)
 
 	// end randomization
 

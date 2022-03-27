@@ -2,7 +2,7 @@ package unicornify
 
 import (
 	. "github.com/balpha/go-unicornify/unicornify/core"
-	"github.com/balpha/gopyrand"
+	pyrand "github.com/balpha/gopyrand"
 )
 
 type UnicornData struct {
@@ -47,6 +47,8 @@ type UnicornData struct {
 
 	NeckTilt float64
 	FaceTilt float64
+
+	EarLength float64
 }
 
 func (d UnicornData) Color(name string, lightness int) Color {
@@ -113,10 +115,15 @@ func (d *UnicornData) Randomize3(rand *pyrand.Random) {
 	d.PoseKind = Poses[d.PoseKindIndex]
 	d.PosePhase = rand.Random()
 }
+
 func (d *UnicornData) Randomize4(rand *pyrand.Random) {
 	halfCount := len(d.HairStarts) / 2
 	d.MakeHair1(rand, halfCount, halfCount)
 	d.MakeHair2(rand, halfCount, halfCount)
+}
+
+func (d *UnicornData) Randomize5(rand *pyrand.Random) {
+	d.EarLength = float64(rand.RandInt(25, 40))
 }
 
 func (d *UnicornData) MakeHair1(rand *pyrand.Random, start, count int) {

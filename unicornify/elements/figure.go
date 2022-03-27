@@ -60,6 +60,12 @@ func ballSetImpl(t Thing, seen map[*Ball]bool, ch chan *Ball, outer bool) {
 		for _, s := range t.Balls {
 			ballSetImpl(s, seen, ch, false)
 		}
+	case *Intersection:
+		ballSetImpl(t.Base, seen, ch, false)
+		ballSetImpl(t.Other, seen, ch, false)
+	case *Difference:
+		ballSetImpl(t.Base, seen, ch, false)
+		ballSetImpl(t.Subtrahend, seen, ch, false)
 	default:
 		panic("unhandled thing type")
 	}
