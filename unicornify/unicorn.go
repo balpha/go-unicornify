@@ -147,7 +147,7 @@ func (u *Unicorn) makeEar(data UnicornData, side float64) *Figure {
 	))
 	for b := range result.BallSet() {
 		frontBack := -45.0 - 45*Sqr(data.BrowMood)
-		upDown := -30 - 20*data.BrowMood
+		upDown := -20 - 10*data.BrowMood
 		b.RotateAround(*base, frontBack*side*DEGREE, 1)
 		b.RotateAround(*base, upDown*side*DEGREE, 0)
 	}

@@ -123,7 +123,7 @@ func (d *UnicornData) Randomize4(rand *pyrand.Random) {
 }
 
 func (d *UnicornData) Randomize5(rand *pyrand.Random) {
-	d.EarLength = float64(rand.RandInt(25, 40))
+	d.EarLength = float64(rand.RandInt(30, 35))
 }
 
 func (d *UnicornData) MakeHair1(rand *pyrand.Random, start, count int) {
