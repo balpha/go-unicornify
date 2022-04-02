@@ -128,7 +128,7 @@ func (u *Unicorn) makeEar(data UnicornData, side float64) *Figure {
 	tip := NewBallP(base.Center.Plus(Vector{0, -data.EarLength, 0}), 4, data.Color("Body", 70))
 
 	baseInner := NewBallP(base.Center, base.Radius-2, base.Color)
-	tipInner := NewBallP(tip.Center, tip.Radius-2, tip.Color)
+	tipInner := NewBallP(tip.Center.Plus(Vector{-tip.Radius, 0, 0}), tip.Radius-2, tip.Color)
 
 	box := NewSteak(
 		NewBallP(base.Center.Plus((Vector{baseRadius, baseRadius, -baseRadius})), baseRadius, color),
