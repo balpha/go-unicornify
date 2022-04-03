@@ -130,13 +130,10 @@ func (u *Unicorn) makeEar(data UnicornData, side float64) *Figure {
 	baseInner := NewBallP(base.Center, base.Radius-2, base.Color)
 	tipInner := NewBallP(tip.Center.Plus(Vector{-tip.Radius, 0, 0}), tip.Radius-2, tip.Color)
 
-	box := NewSteak(
-		NewBallP(base.Center.Plus((Vector{baseRadius, baseRadius, -baseRadius})), baseRadius, color),
-		NewBallP(base.Center.Plus((Vector{baseRadius, baseRadius, baseRadius})), baseRadius, color),
-		NewBallP(base.Center.Plus((Vector{baseRadius, -data.EarLength - baseRadius, -baseRadius})), baseRadius, color),
+	box := NewBone(
+		NewBallP(base.Center.Plus((Vector{2 * baseRadius, 2 * baseRadius, 0})), 2*baseRadius, color),
+		NewBallP(tip.Center.Plus((Vector{2 * baseRadius, -2 * baseRadius, 0})), 2*baseRadius, color),
 	)
-	box.FourCorners = true
-	box.Rounded = false
 	result := &Figure{}
 	result.Add(NewIntersection(
 		NewDifference(
