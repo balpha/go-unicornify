@@ -6,7 +6,7 @@ This is a command line tool that generates the same unicorn avatar images as the
 
 The website returns JPEGs with a maximum size of 128x128 pixels. This tool gives you any size you want, and it gives you a PNG image:
 
-![](https://i.imgur.com/NvySwQb.png)
+![](https://i.imgur.com/ioiNJhG.png)
 
 It also has a few nice extra options.
 
@@ -54,7 +54,7 @@ will generate a 1024x1024 pixel image.
 
 By default, Go-Unicornify generates unicorns with some amount of shading, and with grass on the ground. If you want the "classic" (legacy) style images that look fairly flat, you can use the `-noshading` and `-nograss` parameters. Compare:
 
-![](https://i.imgur.com/KpQvoZ4.png) ![](https://i.imgur.com/sa9pfwu.png)
+![](https://i.imgur.com/IPapHpk.png) ![](https://i.imgur.com/9BGE8U7.png)
 
 Those two images were generated with these commands:
 
@@ -77,7 +77,7 @@ You'll usually want to combine this with `-f`.
 
 The following images show the effects of the `-f` and `-z` switches:
 
-![](https://i.imgur.com/n7RgpHB.png) ![](https://i.imgur.com/vMfnCCl.png) ![](https://i.imgur.com/Ns0QX6Y.png)
+![](https://i.imgur.com/yGgVJEC.png) ![](https://i.imgur.com/3aDidjG.png) ![](https://i.imgur.com/s0UsQqx.png)
 
 The three pictures were generated, in order, with the following commands:
 
@@ -91,7 +91,7 @@ The drawing algorithm produces very [aliased](http://en.wikipedia.org/wiki/Alias
 
 This picture shows a detail of the above image, magnified four-fold:
 
-![](https://i.imgur.com/z2cos5b.png)
+![](https://i.imgur.com/9kOpePq.png)
 
 The left image was generated normally, the right image with disabled anti-aliasing.
 
