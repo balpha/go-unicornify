@@ -2,22 +2,24 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"crypto/md5"
 	"encoding/hex"
 	"flag"
 	"fmt"
-	"github.com/balpha/go-unicornify/unicornify"
 	"image"
 	"image/png"
 	"math/rand"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/balpha/go-unicornify/unicornify"
 )
 
 func main() {
 	var mail, hash string
-	var random, free, zoomOut, nodouble, noshading, nograss, serial bool
+	var random, free, zoomOut, nodouble, noshading, nograss, serial, writeStdout bool
 	var size int
 	var outfile string
 
@@ -32,6 +34,7 @@ func main() {
 	flag.BoolVar(&noshading, "noshading", false, "do not add shading, this will make unicorns look flatter")
 	flag.BoolVar(&nograss, "nograss", false, "do not add grass to the ground")
 	flag.BoolVar(&serial, "serial", false, "do not parallelize the drawing")
+	flag.BoolVar(&writeStdout, "stdout", false, "write image to STDOUT")
 
 	flag.Parse()
 	inputs := 0
@@ -66,7 +69,10 @@ func main() {
 		outfile = hash + ".png"
 	}
 
-	fmt.Printf("Creating size %v avatar for hash %v, writing into %v\n", size, hash, outfile)
+	if !writeStdout {
+		fmt.Printf("Creating size %v avatar for hash %v, writing into %v\n", size, hash, outfile)
+	}
+
 	actualSize := size
 	if !nodouble {
 		actualSize *= 2
@@ -86,6 +92,18 @@ func main() {
 
 	if !nodouble {
 		img = downscale(img)
+	}
+
+	if writeStdout {
+		buf := new(bytes.Buffer)
+		err := png.Encode(buf, img)
+		if err != nil {
+			os.Stderr.WriteString("Error encoding to PNG\n")
+			os.Exit(1)
+		}
+
+		os.Stdout.Write(buf.Bytes())
+		return
 	}
 
 	f, err := os.Create(outfile)
