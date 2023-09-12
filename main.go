@@ -4,22 +4,24 @@ import (
 	"bufio"
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/balpha/go-unicornify/unicornify"
 	"image"
 	"image/png"
 	"math/rand"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/balpha/go-unicornify/unicornify"
 )
 
 func main() {
 	var mail, hash string
 	var random, free, zoomOut, nodouble, noshading, nograss, serial bool
 	var size int
-	var outfile string
+	var outfile, datafile string
 
 	flag.StringVar(&mail, "m", "", "the email address for which a unicorn avatar should be generated")
 	flag.StringVar(&hash, "h", "", "the hash for which a unicorn avatar should be generated")
@@ -32,6 +34,7 @@ func main() {
 	flag.BoolVar(&noshading, "noshading", false, "do not add shading, this will make unicorns look flatter")
 	flag.BoolVar(&nograss, "nograss", false, "do not add grass to the ground")
 	flag.BoolVar(&serial, "serial", false, "do not parallelize the drawing")
+	flag.StringVar(&datafile, "dataout", "", "if given, a JSON file of this name will be created with all the unicorn data")
 
 	flag.Parse()
 	inputs := 0
@@ -77,7 +80,7 @@ func main() {
 		fmt.Printf("\r%v%%    ", perc)
 	}
 
-	err, img := unicornify.MakeAvatar(hash, actualSize, !free, zoomOut, !noshading, !nograss && !free, !serial, yCallback)
+	err, img, allData := unicornify.MakeAvatar(hash, actualSize, !free, zoomOut, !noshading, !nograss && !free, !serial, yCallback)
 	fmt.Print("\r    \r")
 	if err != nil {
 		os.Stderr.WriteString("Not a valid hexadecimal number: " + hash + "\n")
@@ -101,6 +104,21 @@ func main() {
 	if err != nil {
 		os.Stderr.WriteString("Error writing to output file\n")
 		os.Exit(1)
+	}
+
+	if datafile != "" {
+		json, err := json.MarshalIndent(allData, "", "  ")
+		if err != nil {
+			os.Stderr.WriteString("Error creating content for data file\n")
+			os.Stderr.WriteString(err.Error())
+
+			os.Exit(1)
+		}
+		err = os.WriteFile(datafile, json, 0o644)
+		if err != nil {
+			os.Stderr.WriteString("Error writing data file\n")
+			os.Exit(1)
+		}
 	}
 }
 

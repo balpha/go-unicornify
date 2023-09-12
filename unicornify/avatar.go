@@ -10,11 +10,21 @@ import (
 	pyrand "github.com/balpha/gopyrand"
 )
 
-func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shading bool, grass bool, parallelize bool, yCallback func(int)) (error, *image.RGBA) {
+type AllData struct {
+	UnicornData    UnicornData
+	BackgroundData BackgroundData
+	GrassData      GrassData
+	Scale          float64
+	XAngle         float64
+	YAngle         float64
+	FocalLength    float64
+}
+
+func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shading bool, grass bool, parallelize bool, yCallback func(int)) (error, *image.RGBA, AllData) {
 	rand := pyrand.NewRandom()
 	err := rand.SeedFromHexString(hash)
 	if err != nil {
-		return err, nil
+		return err, nil, AllData{}
 	}
 
 	data := UnicornData{}
@@ -36,6 +46,7 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 	abs := rand.RandInt(10, 75)
 	yAngle := float64(90+sign*abs) * DEGREE
 	xAngle := float64(rand.RandInt(-20, 20)) * DEGREE
+	originalXAngle := xAngle
 
 	data.Randomize2(rand)
 	bgdata.Randomize2(rand)
@@ -170,5 +181,15 @@ func MakeAvatar(hash string, size int, withBackground bool, zoomOut bool, shadin
 		DrawTracer(tracer, wv, img, yCallback)
 	}
 
-	return nil, img
+	allData := AllData{
+		UnicornData:    data,
+		BackgroundData: bgdata,
+		GrassData:      grassdata,
+		Scale:          unicornScaleFactor,
+		XAngle:         originalXAngle,
+		YAngle:         yAngle,
+		FocalLength:    focalLength,
+	}
+
+	return nil, img, allData
 }

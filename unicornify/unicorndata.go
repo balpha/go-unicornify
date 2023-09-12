@@ -41,7 +41,7 @@ type UnicornData struct {
 	BrowLength         float64
 	BrowMood           float64 // from -1 (angry) to 1 (astonished)
 
-	PoseKind      func(*Unicorn, float64)
+	PoseKind      func(*Unicorn, float64) `json:"-"`
 	PoseKindIndex int
 	PosePhase     float64
 

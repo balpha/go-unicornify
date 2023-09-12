@@ -98,3 +98,7 @@ The left image was generated normally, the right image with disabled anti-aliasi
 ## Disable parallelization
 
 The drawing operation is parallelized by default to make use of multiple processor cores. You can disable this with the `-serial` switch.
+
+## Save avatar data to a JSON file
+
+To save all the data (colors, angles, sizes etc.) to a JSON file, pass `-dataout filename.json`.
